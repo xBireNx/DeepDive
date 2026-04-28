@@ -25,6 +25,10 @@ export const api = {
     const r = await fetch(`${API}/status`, { signal: AbortSignal.timeout(3000) })
     return r.ok ? await r.json() : null
   },
+  async health() {
+    const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(5000) })
+    return r.ok ? await r.json() : null
+  },
   async search(q) {
     const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(6000) })
     if (!r.ok) return []
@@ -39,6 +43,44 @@ export const api = {
     })
     if (!r.ok) throw new Error('Screen failed')
     return await r.json()
+  },
+  async advancedScreen(filters) {
+    const r = await fetch(`${API}/screen/advanced`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filters }),
+      signal: AbortSignal.timeout(15000)
+    })
+    if (!r.ok) throw new Error('Advanced screen failed')
+    return await r.json()
+  },
+  async portfolioAnalytics(holdings) {
+    const r = await fetch(`${API}/portfolio/analytics`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ holdings }),
+      signal: AbortSignal.timeout(10000)
+    })
+    if (!r.ok) throw new Error('Portfolio analytics failed')
+    return await r.json()
+  },
+  async bulkExport(symbols) {
+    const r = await fetch(`${API}/export/bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols }),
+      signal: AbortSignal.timeout(30000)
+    })
+    if (!r.ok) throw new Error('Export failed')
+    return await r.json()
+  },
+  async cacheInfo() {
+    const r = await fetch(`${API}/cache`, { signal: AbortSignal.timeout(5000) })
+    return r.ok ? await r.json() : null
+  },
+  async analysisHistory() {
+    const r = await fetch(`${API}/analysis_history`, { signal: AbortSignal.timeout(5000) })
+    return r.ok ? await r.json() : null
   },
 }
 
@@ -162,6 +204,55 @@ export const useStore = create(
       },
       resetChecklist(symbol) {
         set(s => { const c = { ...s.checkState }; delete c[symbol]; return { checkState: c } })
+      },
+
+      // Export/Import data
+      exportData() {
+        const state = get()
+        const data = {
+          version: '4.0',
+          exportDate: new Date().toISOString(),
+          watchlist: state.watchlist,
+          portfolio: state.portfolio,
+          journal: state.journal,
+          alerts: state.alerts,
+          notes: state.notes,
+          checkState: state.checkState,
+        }
+        return JSON.stringify(data, null, 2)
+      },
+
+      importData(jsonString) {
+        try {
+          const data = JSON.parse(jsonString)
+          if (data.version && data.watchlist) {
+            set(s => ({
+              watchlist: data.watchlist || s.watchlist,
+              portfolio: data.portfolio || s.portfolio,
+              journal: data.journal || s.journal,
+              alerts: data.alerts || s.alerts,
+              notes: data.notes || s.notes,
+              checkState: data.checkState || s.checkState,
+            }))
+            return { ok: true, msg: 'Data imported successfully' }
+          }
+          return { ok: false, msg: 'Invalid data format' }
+        } catch (e) {
+          return { ok: false, msg: 'Invalid JSON' }
+        }
+      },
+
+      clearAllData() {
+        set({
+          watchlist: [],
+          portfolio: [],
+          journal: [],
+          alerts: {},
+          notes: {},
+          checkState: {},
+          stockCache: {},
+          activeStock: null,
+        })
       },
     }),
     {

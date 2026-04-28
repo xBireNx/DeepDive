@@ -197,7 +197,69 @@ def not_found(e):
 
 @app.route("/api/status")
 def status():
-    return ok({"status":"running","cached":list(_cache.keys()),"version":"4.0.0"})
+    cache_size = len(_cache)
+    news_cache_size = len(_news_cache)
+    
+    with _cache_lock:
+        cache_info = {k: {"ts": v["ts"], "size": len(str(v["data"]))} for k, v in _cache.items()}
+    
+    return ok({
+        "status": "running",
+        "version": "4.0.0",
+        "cache": {
+            "analysis_count": cache_size,
+            "news_count": news_cache_size
+        },
+        "uptime": "N/A",
+        "features": [
+            "fundamental_analysis",
+            "technical_analysis", 
+            "advanced_analysis",
+            "news_sentiment",
+            "screener_data",
+            "dcf_valuation",
+            "options_chain",
+            "concall_summary",
+            "mutual_funds",
+            "strategic_analysis",
+            "sector_rotation",
+            "price_alerts"
+        ]
+    })
+
+@app.route("/api/health")
+def health():
+    """Detailed health check."""
+    import psutil
+    import os
+    
+    try:
+        process = psutil.Process(os.getpid())
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        cpu_percent = process.cpu_percent(interval=0.1)
+    except:
+        memory_mb = 0
+        cpu_percent = 0
+    
+    with _cache_lock:
+        cache_count = len(_cache)
+        cache_mem = sum(len(str(v["data"])) for v in _cache.values())
+    
+    return ok({
+        "status": "healthy",
+        "system": {
+            "memory_mb": round(memory_mb, 2),
+            "cpu_percent": round(cpu_percent, 2),
+            "cache_entries": cache_count,
+            "cache_memory_mb": round(cache_mem / 1024 / 1024, 2),
+            "news_cache_entries": len(_news_cache)
+        },
+        "api_endpoints": {
+            "GET": ["/api/status", "/api/health", "/api/analysis_history", "/api/cache"],
+            "POST": ["/api/analyze", "/api/screen", "/api/screen/advanced", "/api/batch", "/api/portfolio/analytics", "/api/export/bulk"],
+            "CUSTOM": ["/api/search", "/api/news", "/api/price", "/api/sector-rotation", "/api/options", "/api/concall", "/api/mf", "/api/strategic"]
+        }
+    })
 
 @app.route("/api/search")
 def search():
@@ -380,6 +442,232 @@ def clear_cache(symbol):
     with _cache_lock:
         _cache.pop(symbol.upper(), None)
     return ok({"message": f"Cache cleared for {symbol.upper()}"})
+
+@app.route("/api/cache", methods=["GET"])
+def get_cache_info():
+    """Get cache statistics and list all cached symbols."""
+    with _cache_lock:
+        symbols = []
+        total_size = 0
+        for k, v in _cache.items():
+            symbols.append({
+                "symbol": k,
+                "ts": datetime.fromtimestamp(v["ts"]).isoformat(),
+                "size_bytes": len(str(v["data"]))
+            })
+            total_size += len(str(v["data"]))
+    return ok({
+        "count": len(symbols),
+        "symbols": [s["symbol"] for s in symbols],
+        "total_size_mb": round(total_size / 1024 / 1024, 2),
+        "details": symbols
+    })
+
+@app.route("/api/cache/all", methods=["POST"])
+def clear_all_cache():
+    """Clear all cached analysis data."""
+    with _cache_lock:
+        _cache.clear()
+    return ok({"message": "All cache cleared"})
+
+@app.route("/api/analysis_history", methods=["GET"])
+def analysis_history():
+    """Get analysis history with timestamps."""
+    with _cache_lock:
+        history = []
+        for k, v in _cache.items():
+            history.append({
+                "symbol": k,
+                "analysed_at": datetime.fromtimestamp(v["ts"]).isoformat(),
+                "has_price": bool(v["data"].get("price", {}).get("current")),
+                "has_fundamental": bool(v["data"].get("fundamental", {}).get("grade")),
+                "has_technical": bool(v["data"].get("technical", {}).get("trend")),
+            })
+    history.sort(key=lambda x: x["analysed_at"], reverse=True)
+    return ok({"history": history, "total": len(history)})
+
+@app.route("/api/portfolio/analytics", methods=["POST"])
+def portfolio_analytics():
+    """Calculate portfolio-level analytics from holdings."""
+    body = request.get_json() or {}
+    holdings = body.get("holdings", [])
+    
+    if not holdings:
+        return err("No holdings provided")
+    
+    results = {"holdings": [], "summary": {}, "allocation": {}, "risk": {}}
+    
+    total_invested = 0
+    total_current = 0
+    sectors = {}
+    
+    with _cache_lock:
+        for h in holdings:
+            ticker = h.get("ticker", "").upper()
+            qty = h.get("qty", 0)
+            buy_price = h.get("buyPrice", 0)
+            
+            invested = qty * buy_price
+            total_invested += invested
+            
+            cached = _cache.get(ticker)
+            current_price = 0
+            current_value = 0
+            sector = "Unknown"
+            grade = None
+            
+            if cached:
+                data = cached.get("data", {})
+                current_price = data.get("price", {}).get("current") or 0
+                current_value = qty * current_price
+                sector = data.get("company", {}).get("sector") or "Unknown"
+                grade = data.get("fundamental", {}).get("grade")
+            
+            total_current += current_value
+            
+            pnl = current_value - invested
+            pnl_pct = (pnl / invested * 100) if invested > 0 else 0
+            
+            results["holdings"].append({
+                "ticker": ticker,
+                "qty": qty,
+                "buy_price": buy_price,
+                "current_price": current_price,
+                "invested": invested,
+                "current_value": current_value,
+                "pnl": pnl,
+                "pnl_pct": round(pnl_pct, 2),
+                "sector": sector,
+                "grade": grade
+            })
+            
+            if sector not in sectors:
+                sectors[sector] = 0
+            sectors[sector] += current_value
+    
+    total_pnl = total_current - total_invested
+    total_pnl_pct = (total_pnl / total_invested * 100) if total_invested > 0 else 0
+    
+    results["summary"] = {
+        "total_invested": round(total_invested, 2),
+        "total_current": round(total_current, 2),
+        "total_pnl": round(total_pnl, 2),
+        "total_pnl_pct": round(total_pnl_pct, 2),
+        "holdings_count": len(holdings)
+    }
+    
+    for sector, value in sectors.items():
+        pct = (value / total_current * 100) if total_current > 0 else 0
+        results["allocation"][sector] = {
+            "value": round(value, 2),
+            "percentage": round(pct, 2)
+        }
+    
+    # Risk metrics
+    results["risk"] = {
+        "concentration": max([(h["current_value"]/total_current*100) for h in results["holdings"]]) if total_current > 0 else 0,
+        "diversification_score": len(sectors),
+        "sectors_count": len(sectors)
+    }
+    
+    return ok(results)
+
+@app.route("/api/export/bulk", methods=["POST"])
+def bulk_export():
+    """Export multiple stocks' analysis data."""
+    body = request.get_json() or {}
+    symbols = body.get("symbols", [])[:20]
+    
+    if not symbols:
+        return err("No symbols provided")
+    
+    with _cache_lock:
+        data = {}
+        for sym in symbols:
+            if sym in _cache:
+                data[sym] = _cache[sym]["data"]
+            else:
+                try:
+                    result = run_full_analysis(sym.upper())
+                    data[sym] = result
+                except Exception as e:
+                    data[sym] = {"error": str(e)}
+    
+    return ok({
+        "export_date": datetime.now().isoformat(),
+        "count": len(data),
+        "data": data
+    })
+
+@app.route("/api/screen/advanced", methods=["POST"])
+def advanced_screen():
+    """Advanced screening with more filters."""
+    body = request.get_json() or {}
+    filters = body.get("filters", {})
+    
+    with _cache_lock:
+        stocks = {k: v["data"] for k, v in _cache.items()}
+    
+    results = []
+    for symbol, d in stocks.items():
+        r = d.get("ratios", {})
+        f = d.get("fundamental", {})
+        t = d.get("technical", {})
+        p = d.get("price", {})
+        
+        score = {
+            "symbol": symbol,
+            "name": d.get("company", {}).get("name", ""),
+            "price": p.get("current"),
+            "ret_1m": p.get("ret1m"),
+            "ret_1y": p.get("ret1y"),
+            "pe": r.get("pe"),
+            "pb": r.get("pb"),
+            "roe": r.get("roe"),
+            "debt_to_equity": r.get("debt_to_equity"),
+            "net_margin": r.get("profit_margin"),
+            "revenue_growth": r.get("revenue_growth"),
+            "op_margin": r.get("op_margin"),
+            "dividend_yield": r.get("dividend_yield"),
+            "grade": f.get("grade", ""),
+            "overall_pct": f.get("overallPct", 0),
+            "trend": t.get("trend", ""),
+            "rsi": t.get("rsiVal"),
+        }
+        
+        passed = True
+        
+        # Basic filters
+        if "maxPE" in filters and score["pe"] and score["pe"] > filters["maxPE"]: passed = False
+        if "minROE" in filters and score["roe"] and score["roe"] < filters["minROE"]: passed = False
+        if "maxDE" in filters and score["debt_to_equity"] and score["debt_to_equity"] > filters["maxDE"]: passed = False
+        if "minRevGrowth" in filters and score["revenue_growth"] and score["revenue_growth"] < filters["minRevGrowth"]: passed = False
+        if "minNetMargin" in filters and score["net_margin"] and score["net_margin"] < filters["minNetMargin"]: passed = False
+        if "minOpMargin" in filters and score["op_margin"] and score["op_margin"] < filters["minOpMargin"]: passed = False
+        if "minDividend" in filters and (not score["dividend_yield"] or score["dividend_yield"] < filters["minDividend"]): passed = False
+        if "minPrice" in filters and (not score["price"] or score["price"] < filters["minPrice"]): passed = False
+        if "maxPrice" in filters and score["price"] and score["price"] > filters["maxPrice"]: passed = False
+        if "minMarketCap" in filters:
+            mc = d.get("company", {}).get("market_cap_cr", 0)
+            if not mc or mc < filters["minMarketCap"]: passed = False
+        if "sector" in filters and filters["sector"]:
+            sector = d.get("company", {}).get("sector", "")
+            if sector.lower() != filters["sector"].lower(): passed = False
+        if "trendFilter" in filters and filters["trendFilter"] != "Any":
+            if filters["trendFilter"].lower() not in (score["trend"] or "").lower(): passed = False
+        if "minGrade" in filters:
+            grade_order = {"A": 4, "B": 3, "C": 2, "D": 1, "F": 0}
+            g1 = grade_order.get(score["grade"][0] if score["grade"] else "F", 0)
+            g2 = grade_order.get(filters["minGrade"], 0)
+            if g1 < g2: passed = False
+        if "minRSI" in filters and score["rsi"] and score["rsi"] < filters["minRSI"]: passed = False
+        if "maxRSI" in filters and score["rsi"] and score["rsi"] > filters["maxRSI"]: passed = False
+        
+        if passed:
+            results.append(score)
+    
+    results.sort(key=lambda x: x.get("overall_pct", 0), reverse=True)
+    return ok({"results": results, "total": len(results), "filters": filters})
 
 @app.route("/api/batch", methods=["POST"])
 def batch():
