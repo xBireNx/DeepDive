@@ -40,15 +40,15 @@ export default function Alerts() {
   return (
     <div className="layout-2col">
       <div>
-        <div className="sec">
-          <span className="sec-l">Active Alerts</span>
-          <div className="sec-line" style={{ flex: 1 }} />
+        <div className="section-header">
+          <span className="section-title">Active Alerts</span>
+          <div className="section-line" style={{ flex: 1 }} />
         </div>
 
         {alTickers.length === 0 && (
-          <div className="empty-state" style={{ height: 180 }}>
+          <div className="empty-state" style={{ minHeight: 160 }}>
             <div className="empty-icon">◎</div>
-            <div className="empty-text">No alerts set</div>
+            <div className="empty-title">No alerts set</div>
           </div>
         )}
 
@@ -62,47 +62,47 @@ export default function Alerts() {
           if (al.target && cmp >= al.target) triggered.push('Target Hit')
 
           const levels = [
-            al.target && { l: 'Target', v: al.target, c: 'var(--success)' },
-            cmp && { l: 'CMP', v: cmp, c: 'var(--text)' },
+            al.target && { l: 'Target', v: al.target, c: 'var(--gain)' },
+            cmp && { l: 'CMP', v: cmp, c: 'var(--text-primary)' },
             al.buy && { l: 'Buy Zone', v: al.buy, c: 'var(--warning)' },
-            al.sl && { l: 'Stop-Loss', v: al.sl, c: 'var(--error)' },
+            al.sl && { l: 'Stop-Loss', v: al.sl, c: 'var(--loss)' },
           ].filter(Boolean).sort((a, b) => b.v - a.v)
 
           return (
-            <div key={ticker} className="card" style={{ marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div key={ticker} className="panel" style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <div>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{ticker}</span>
-                  <span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 10 }}>{d?.company?.name?.substring(0, 24) || ''}</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{ticker}</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{d?.company?.name?.substring(0, 20) || ''}</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: (d?.price?.ret1m || 0) >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: (d?.price?.ret1m || 0) >= 0 ? 'var(--gain)' : 'var(--loss)', fontFamily: 'var(--font-mono)' }}>
                     ₹{cmp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
                   </span>
                   {triggered.map(t => (
-                    <span key={t} className="tag tag-y" style={{ fontSize: 10 }}>{t}</span>
+                    <span key={t} className="badge" style={{ fontSize: 9 }}>{t}</span>
                   ))}
-                  <button className="btn-sm-red" onClick={() => { clearAlert(ticker); showToast(`Alerts cleared for ${ticker}`) }}>Clear</button>
+                  <button className="btn-sm" onClick={() => { clearAlert(ticker); showToast(`Alerts cleared for ${ticker}`) }}>Clear</button>
                 </div>
               </div>
 
-              <div style={{ position: 'relative', paddingLeft: 100 }}>
+              <div style={{ position: 'relative', paddingLeft: 80 }}>
                 {levels.map((lvl, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', height: 36, position: 'relative' }}>
-                    <span style={{ position: 'absolute', left: 0, fontSize: 11, color: 'var(--text-dim)', width: 80, textAlign: 'right' }}>{lvl.l}</span>
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', height: 28, position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 0, fontSize: 10, color: 'var(--text-dim)', width: 60, textAlign: 'right' }}>{lvl.l}</span>
                     <div
                       style={{
-                        width: 12,
-                        height: 12,
+                        width: 10,
+                        height: 10,
                         borderRadius: '50%',
                         border: `2px solid ${lvl.c}`,
                         position: 'absolute',
-                        left: 88,
+                        left: 68,
                         background: lvl.v === cmp ? 'transparent' : lvl.c,
-                        boxShadow: lvl.v === cmp ? `0 0 8px ${lvl.c}` : 'none'
+                        boxShadow: lvl.v === cmp ? `0 0 6px ${lvl.c}` : 'none'
                       }}
                     />
-                    <span style={{ fontSize: 13, fontWeight: 700, color: lvl.c, marginLeft: 112 }}>₹{lvl.v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: lvl.c, marginLeft: 88, fontFamily: 'var(--font-mono)' }}>₹{lvl.v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                   </div>
                 ))}
               </div>
@@ -111,10 +111,10 @@ export default function Alerts() {
         })}
       </div>
 
-      <div className="sidebar-panel">
-        <div className="card" style={{ padding: '20px 16px' }}>
-          <div className="card-title">Set Price Alert</div>
-          <select className="select" style={{ marginBottom: 10 }} value={form.ticker} onChange={e => f('ticker', e.target.value)}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="panel" style={{ padding: '16px' }}>
+          <div className="panel-title">Set Price Alert</div>
+          <select className="select" style={{ marginBottom: 8 }} value={form.ticker} onChange={e => f('ticker', e.target.value)}>
             <option value="">Select Stock</option>
             {allTickers.map(t => (
               <option key={t} value={t}>
@@ -122,33 +122,33 @@ export default function Alerts() {
               </option>
             ))}
           </select>
-          <input className="input" style={{ marginBottom: 10 }} type="number" placeholder="Buy Zone / Entry Price ₹" value={form.buy} onChange={e => f('buy', e.target.value)} />
-          <input className="input" style={{ marginBottom: 10 }} type="number" placeholder="Target Price ₹" value={form.target} onChange={e => f('target', e.target.value)} />
-          <input className="input" style={{ marginBottom: 12 }} type="number" placeholder="Stop-Loss ₹" value={form.sl} onChange={e => f('sl', e.target.value)} />
+          <input className="input" style={{ marginBottom: 8 }} type="number" placeholder="Buy Zone / Entry ₹" value={form.buy} onChange={e => f('buy', e.target.value)} />
+          <input className="input" style={{ marginBottom: 8 }} type="number" placeholder="Target Price ₹" value={form.target} onChange={e => f('target', e.target.value)} />
+          <input className="input" style={{ marginBottom: 10 }} type="number" placeholder="Stop-Loss ₹" value={form.sl} onChange={e => f('sl', e.target.value)} />
 
-          <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginBottom: 10 }}>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 10 }}>Optional: Notify me via Email/SMS when triggered</div>
-            <input className="input" style={{ marginBottom: 10 }} type="email" placeholder="Email Address" value={form.email} onChange={e => f('email', e.target.value)} />
-            <input className="input" style={{ marginBottom: 10 }} type="tel" placeholder="Phone Number (e.g. +91...)" value={form.phone} onChange={e => f('phone', e.target.value)} />
+          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 12, marginBottom: 8 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 8 }}>Optional: Notify me via Email/SMS</div>
+            <input className="input" style={{ marginBottom: 8 }} type="email" placeholder="Email Address" value={form.email} onChange={e => f('email', e.target.value)} />
+            <input className="input" style={{ marginBottom: 8 }} type="tel" placeholder="Phone Number" value={form.phone} onChange={e => f('phone', e.target.value)} />
           </div>
 
           <button className="btn-primary" style={{ width: '100%' }} onClick={doSet}>Set Alert</button>
         </div>
 
-        <div className="card" style={{ padding: '16px' }}>
-          <div className="card-title">Guide</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 2 }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ color: 'var(--warning)', fontSize: 10 }}>●</span>
-              <span><strong>Buy Zone</strong> — Entry price with margin of safety</span>
+        <div className="panel" style={{ padding: '14px' }}>
+          <div className="panel-title">Guide</div>
+          <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ color: 'var(--warning)', fontSize: 9 }}>●</span>
+              <span><strong>Buy Zone</strong> — Entry with margin of safety</span>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ color: 'var(--success)', fontSize: 10 }}>●</span>
-              <span><strong>Target</strong> — Your intrinsic value estimate</span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ color: 'var(--gain)', fontSize: 9 }}>●</span>
+              <span><strong>Target</strong> — Intrinsic value estimate</span>
             </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ color: 'var(--error)', fontSize: 10 }}>●</span>
-              <span><strong>Stop-Loss</strong> — Thesis broken. Exit without emotion.</span>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <span style={{ color: 'var(--loss)', fontSize: 9 }}>●</span>
+              <span><strong>Stop-Loss</strong> — Thesis broken. Exit.</span>
             </div>
           </div>
         </div>

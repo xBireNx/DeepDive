@@ -22,12 +22,12 @@ import ConcallTab from './components/tabs/ConcallTab'
 import MutualFundsTab from './components/tabs/MutualFundsTab'
 import StrategicTab from './components/tabs/StrategicTab'
 
-const MOBILE_NAV = [
-  { id: 'overview', icon: '◈', label: 'Overview' },
+const MOBILE_TABS = [
+  { id: 'overview', icon: '◈', label: 'Home' },
   { id: 'news', icon: '◉', label: 'News' },
   { id: 'dcf', icon: '⊛', label: 'DCF' },
   { id: 'portfolio', icon: '◫', label: 'Portfolio' },
-  { id: 'journal', icon: '◩', label: 'Journal' },
+  { id: 'journal', icon: '◩', label: 'Notes' },
 ]
 
 const ALL_TABS = [
@@ -46,9 +46,9 @@ const ALL_TABS = [
   { id: 'compare', label: 'Compare' },
   { id: 'options', label: 'Options' },
   { id: 'concall', label: 'Concall' },
-  { id: 'mf', label: 'Mutual Funds' },
+  { id: 'mf', label: 'M.Funds' },
   { id: 'strategic', label: 'Strategic' },
-  { id: 'calculators', label: 'Calculators' },
+  { id: 'calculators', label: 'Tools' },
 ]
 
 function AddModal({ onClose }) {
@@ -82,7 +82,7 @@ function AddModal({ onClose }) {
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal">
         <div className="modal-title">Add Stock</div>
-        <div className="modal-sub">Enter an NSE ticker to analyze</div>
+        <div className="modal-sub">Enter NSE ticker symbol to analyze</div>
         <input
           className="input"
           autoFocus
@@ -94,10 +94,10 @@ function AddModal({ onClose }) {
             if (e.key === 'Escape') onClose()
           }}
         />
-        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 12 }}>
+        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 10 }}>
           Supports NSE symbols and full company names
         </div>
-        <div className="modal-btns">
+        <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={doAdd} disabled={loading}>
             {loading ? 'Analyzing...' : 'Analyze & Add'}
@@ -116,36 +116,36 @@ function WelcomeModal({ onClose }) {
 
   return (
     <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
-      <div className="modal" role="dialog" aria-label="Welcome">
-        <div className="modal-title">Welcome to DeepDive</div>
-        <div className="modal-sub" style={{ marginBottom: 16 }}>
-          Your intelligent stock analysis companion. Here's how to get started:
+      <div className="modal">
+        <div className="modal-title">Welcome to DeepDive Pro</div>
+        <div className="modal-sub">
+          Professional stock analysis terminal. Here's how to get started:
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--primary)', fontSize: 18 }}>◈</span>
+            <span style={{ color: 'var(--accent-primary)', fontSize: 16 }}>◆</span>
             <div>
-              <div style={{ fontWeight: 600, marginBottom: 2 }}>Track Your Watchlist</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Add stocks from the sidebar and monitor them in real-time</div>
+              <div style={{ fontWeight: 600, marginBottom: 2, fontSize: 14 }}>Track Your Watchlist</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Add stocks from sidebar and monitor in real-time</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--primary)', fontSize: 18 }}>⊛</span>
+            <span style={{ color: 'var(--accent-primary)', fontSize: 16 }}>◆</span>
             <div>
-              <div style={{ fontWeight: 600, marginBottom: 2 }}>Deep Analysis Tools</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Use DCF, technical analysis, and more to evaluate stocks</div>
+              <div style={{ fontWeight: 600, marginBottom: 2, fontSize: 14 }}>Deep Analysis</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>DCF valuation, technicals, peers, and advanced metrics</div>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <span style={{ color: 'var(--primary)', fontSize: 18 }}>◫</span>
+            <span style={{ color: 'var(--accent-primary)', fontSize: 16 }}>◆</span>
             <div>
-              <div style={{ fontWeight: 600, marginBottom: 2 }}>Portfolio & Journal</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Track holdings and maintain investment notes</div>
+              <div style={{ fontWeight: 600, marginBottom: 2, fontSize: 14 }}>Portfolio & Journal</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Track holdings and maintain investment notes</div>
             </div>
           </div>
         </div>
-        <div className="modal-btns" style={{ justifyContent: 'flex-end', marginTop: 24 }}>
-          <button className="btn-outline" onClick={handleClose}>Remind Later</button>
+        <div className="modal-actions" style={{ marginTop: 24 }}>
+          <button className="btn-secondary" onClick={handleClose}>Remind Later</button>
           <button className="btn-primary" onClick={handleClose}>Get Started</button>
         </div>
       </div>
@@ -167,24 +167,22 @@ export default function App() {
   const backendLive = useStore(s => s.backendLive)
 
   useEffect(() => {
-    try { document.documentElement.setAttribute('data-theme', theme) } catch (e) { /* ignore */ }
+    try { document.documentElement.setAttribute('data-theme', theme) } catch (e) { }
   }, [theme])
 
   useEffect(() => {
     if (!backendLive) return
     let active = true
-
-    const pollLiveAlerts = async () => {
+    const pollAlerts = async () => {
       try {
         const res = await fetch('/api/live-alerts')
         const json = await res.json()
         if (json.ok && json.alert && active) {
-          showToast(json.alert, 'alert', 6000)
+          showToast(json.alert, 'warning', 6000)
         }
-      } catch { /* ignore polling errors */ }
+      } catch { }
     }
-
-    const interval = setInterval(pollLiveAlerts, 30000)
+    const interval = setInterval(pollAlerts, 30000)
     return () => { active = false; clearInterval(interval) }
   }, [backendLive])
 
@@ -194,7 +192,6 @@ export default function App() {
     return () => window.removeEventListener('resize', h)
   }, [])
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
@@ -207,13 +204,8 @@ export default function App() {
         'r': 'strategic', '=': 'calculators'
       }
       
-      if (tabMap[e.key]) {
-        setActiveTab(tabMap[e.key])
-      }
-      
-      if (e.key === 'Escape') {
-        setSidebarOpen(false)
-      }
+      if (tabMap[e.key]) setActiveTab(tabMap[e.key])
+      if (e.key === 'Escape') setSidebarOpen(false)
     }
     
     window.addEventListener('keydown', handleKeyDown)
@@ -240,16 +232,19 @@ export default function App() {
       case 'mf': return <MutualFundsTab data={data} />
       case 'strategic': return <StrategicTab data={data} />
       case 'calculators': return <Calculators />
-      default: return <Overview data={data} /> // eslint-disable-line no-unused-vars
+      default: return <Overview data={data} />
     }
   }
 
   return (
     <>
+      {sidebarOpen && <div className="modal-overlay" style={{ zIndex: 250 }} onClick={() => setSidebarOpen(false)} />}
+      
       <div className="app-shell">
-        <Topbar onHamburger={() => setSidebarOpen(o => !o)} />
-
-        {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+        <Topbar 
+          onHamburger={() => setSidebarOpen(o => !o)}
+          onAddStock={() => setShowAddModal(true)}
+        />
 
         <Sidebar
           isOpen={sidebarOpen}
@@ -280,7 +275,7 @@ export default function App() {
 
       <div className="mobile-nav">
         <div className="mobile-nav-items">
-          {MOBILE_NAV.map(t => (
+          {MOBILE_TABS.map(t => (
             <button
               key={t.id}
               className={`mobile-nav-item${activeTab === t.id ? ' active' : ''}`}
@@ -292,7 +287,7 @@ export default function App() {
           ))}
           <button className="mobile-nav-item" onClick={() => setSidebarOpen(true)}>
             <span className="mobile-nav-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />

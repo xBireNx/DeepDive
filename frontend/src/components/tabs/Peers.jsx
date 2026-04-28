@@ -12,7 +12,7 @@ export default function Peers({ data }) {
   if (!data) return (
     <div className="empty-state">
       <div className="empty-icon">⊞</div>
-      <div className="empty-text">Select a stock first</div>
+      <div className="empty-title">Select a stock first</div>
     </div>
   )
 
@@ -45,24 +45,24 @@ export default function Peers({ data }) {
 
   return (
     <div>
-      <div className="sec">
-        <span className="sec-l">{data.symbol} vs Peers</span>
-        <div className="sec-line" style={{ flex: 1 }} />
+      <div className="section-header">
+        <span className="section-title">{data.symbol} vs Peers</span>
+        <div className="section-line" style={{ flex: 1 }} />
       </div>
 
       {peers.length > 0 ? (
-        <div className="card" style={{ overflowX: 'auto', marginBottom: 20 }}>
-          <div className="card-title">Peer Comparison (from Screener.in)</div>
+        <div className="panel" style={{ overflowX: 'auto', marginBottom: 16, padding: 0 }}>
+          <div className="panel-title" style={{ padding: '14px 16px' }}>Peer Comparison</div>
           <table className="p-table">
             <thead>
               <tr>{Object.keys(peers[0]).slice(0, 6).map(h => <th key={h}>{h}</th>)}</tr>
             </thead>
             <tbody>
-              <tr style={{ background: 'var(--primary-glow)', borderLeft: '3px solid var(--primary)' }}>
+              <tr style={{ background: 'var(--accent-primary-dim)', borderLeft: '3px solid var(--accent-primary)' }}>
                 {Object.keys(peers[0]).slice(0, 6).map(k => {
                   const isName = k.toLowerCase().includes('company') || k.toLowerCase().includes('name')
                   return (
-                    <td key={k} style={{ fontWeight: isName ? 700 : 400, color: isName ? 'var(--primary)' : 'var(--text)' }}>
+                    <td key={k} style={{ fontWeight: isName ? 700 : 400, color: isName ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
                       {isName ? `${data.symbol} (Selected)` : data.ratios?.[k] || '—'}
                     </td>
                   )
@@ -79,43 +79,43 @@ export default function Peers({ data }) {
           </table>
         </div>
       ) : (
-        <div className="card" style={{ marginBottom: 20, fontSize: 12, color: 'var(--text-dim)' }}>
-          Peer data from Screener.in not available. Try running the CLI tool for more reliable peer data.
+        <div className="panel" style={{ marginBottom: 16, fontSize: 11, color: 'var(--text-dim)' }}>
+          Peer data from Screener.in not available.
         </div>
       )}
 
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="card-title">{data.symbol} — Key Metrics at a Glance</div>
+      <div className="panel" style={{ marginBottom: 16 }}>
+        <div className="panel-title">{data.symbol} — Key Metrics</div>
         {metrics.map(m => {
           if (!m.v) return null
           const n = parseFloat(m.v) || 0
           const maxB = maxVals[m.l.toLowerCase().replace(' ', '')] || 100
           const pct = Math.min(n / maxB * 100, 100)
-          const col = m.higher ? (n > 15 ? 'var(--success)' : n > 8 ? 'var(--warning)' : 'var(--error)') : (n < 30 ? 'var(--success)' : n < 60 ? 'var(--warning)' : 'var(--error)')
+          const col = m.higher ? (n > 15 ? 'var(--gain)' : n > 8 ? 'var(--warning)' : 'var(--loss)') : (n < 30 ? 'var(--gain)' : n < 60 ? 'var(--warning)' : 'var(--loss)')
           return (
-            <div key={m.l} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', width: 100, flexShrink: 0 }}>{m.l}</span>
-              <div style={{ flex: 1, height: 8, background: 'var(--surface-hover)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 4 }} />
+            <div key={m.l} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)', width: 90, flexShrink: 0 }}>{m.l}</span>
+              <div style={{ flex: 1, height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: col, borderRadius: 3 }} />
               </div>
-              <span style={{ fontSize: 12, color: 'var(--text)', width: 50, textAlign: 'right', fontWeight: 600 }}>{fN(m.v, '', '' + m.unit, 1)}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-primary)', width: 45, textAlign: 'right', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fN(m.v, '', '' + m.unit, 1)}</span>
             </div>
           )
         })}
       </div>
 
-      <div className="card">
-        <div className="card-title">Head-to-Head Live Comparison</div>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div className="panel">
+        <div className="panel-title">Head-to-Head Comparison</div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
           <input
             className="input"
             style={{ flex: 1 }}
-            placeholder="Enter peer NSE ticker (e.g. BLUESTARCO)"
+            placeholder="Enter peer NSE ticker"
             value={peerTicker}
             onChange={e => setPeerTicker(e.target.value.toUpperCase())}
             onKeyDown={e => e.key === 'Enter' && analysePeer()}
           />
-          <button className="btn-primary" onClick={analysePeer} disabled={loading} style={{ padding: '12px 24px' }}>
+          <button className="btn-primary" onClick={analysePeer} disabled={loading} style={{ padding: '10px 18px', fontSize: 12 }}>
             {loading ? '...' : 'Analyze'}
           </button>
         </div>
@@ -142,12 +142,12 @@ export default function Peers({ data }) {
                 {rows.map(([l, v1, v2, dir]) => {
                   const n1 = parseFloat(v1) || 0, n2 = parseFloat(v2) || 0
                   const win = dir === 'higher' ? (n1 > n2 ? data.symbol : peerData.symbol) : dir === 'lower' ? (n1 < n2 ? data.symbol : peerData.symbol) : '—'
-                  const wc = win === data.symbol ? 'cg' : win === peerData.symbol ? 'cy' : 'cd'
+                  const wc = win === data.symbol ? 'text-gain' : win === peerData.symbol ? 'text-loss' : 'text-muted'
                   return (
                     <tr key={l}>
-                      <td style={{ color: 'var(--text-muted)' }}>{l}</td>
-                      <td>{v1 || '—'}</td>
-                      <td>{v2 || '—'}</td>
+                      <td style={{ color: 'var(--text-secondary)' }}>{l}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>{v1 || '—'}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>{v2 || '—'}</td>
                       <td className={wc} style={{ fontWeight: 700 }}>{win}</td>
                     </tr>
                   )

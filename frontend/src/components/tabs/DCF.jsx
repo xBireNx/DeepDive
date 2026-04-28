@@ -2,13 +2,14 @@ import { useState } from 'react'
 
 function Slider({ id, label, value, min, max, step = 0.5, unit, desc, onChange }) {
   return (
-    <div className="dcf-slider">
-      <div className="dcf-slider-label">
+    <div className="slider-panel">
+      <div className="slider-label">
         <span>{label}</span>
-        <span className="dcf-slider-value">{value}<span style={{ fontSize: 11, color: 'var(--text-dim)', marginLeft: 4 }}>{unit}</span></span>
+        <span className="slider-value">{value}<span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 4 }}>{unit}</span></span>
       </div>
       <input
         type="range"
+        className="slider-input"
         id={id}
         min={min}
         max={max}
@@ -16,11 +17,11 @@ function Slider({ id, label, value, min, max, step = 0.5, unit, desc, onChange }
         value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
       />
-      <div className="dcf-slider-range">
+      <div className="slider-range">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
-      {desc && <div className="dcf-slider-desc">{desc}</div>}
+      {desc && <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 6, lineHeight: 1.5 }}>{desc}</div>}
     </div>
   )
 }
@@ -51,7 +52,7 @@ export default function DCF({ data }) {
   if (!data) return (
     <div className="empty-state">
       <div className="empty-icon">⊛</div>
-      <div className="empty-text">Select a stock first</div>
+      <div className="empty-title">Select a stock first</div>
     </div>
   )
 
@@ -69,8 +70,8 @@ export default function DCF({ data }) {
   return (
     <div className="layout-2col">
       <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 16, marginBottom: 16 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{data.symbol} — DCF Valuation</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: 16 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>{data.symbol} — DCF Valuation</div>
           <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Adjust assumptions → see intrinsic value</div>
         </div>
 
@@ -88,64 +89,64 @@ export default function DCF({ data }) {
       </div>
 
       <div style={{ position: 'sticky', top: 0 }}>
-        <div className="dcf-result" style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Intrinsic Value</div>
+        <div className="dcf-result">
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 }}>Intrinsic Value</div>
           <div className="dcf-iv">
             ₹{Math.round(iv).toLocaleString('en-IN')}<sup>/sh</sup>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8 }}>Current: ₹{cmp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6 }}>Current: ₹{cmp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
 
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-dim)', letterSpacing: 1, textTransform: 'uppercase' }}>Margin of Safety</div>
-            <div className="dcf-mos" style={{ color: mosPct >= 0 ? 'var(--success)' : 'var(--error)' }}>
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+            <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase' }}>Margin of Safety</div>
+            <div className="dcf-mos" style={{ color: mosPct >= 0 ? 'var(--gain)' : 'var(--loss)' }}>
               {mosPct >= 0 ? '+' : ''}{mosPct.toFixed(1)}%
             </div>
           </div>
 
-          <div style={{ marginTop: 14, padding: '14px 16px', borderRadius: 10, background: isUnder ? 'var(--success-muted)' : 'var(--error-muted)', border: `1px solid ${isUnder ? 'var(--success)' : 'var(--error)'}`, color: isUnder ? 'var(--success)' : 'var(--error)', fontSize: 12, textAlign: 'left', lineHeight: 1.6 }}>
+          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 8, background: isUnder ? 'var(--gain-dim)' : 'var(--loss-dim)', border: `1px solid ${isUnder ? 'var(--gain)' : 'var(--loss)'}`, color: isUnder ? 'var(--gain)' : 'var(--loss)', fontSize: 12, textAlign: 'left', lineHeight: 1.5 }}>
             {isUnder
               ? `✓ Below intrinsic value. Buy below ₹${Math.round(buyAt).toLocaleString('en-IN')} for ${params.mos}% MOS.`
               : `⚠ Above intrinsic value. Wait for ₹${Math.round(buyAt).toLocaleString('en-IN')} or lower.`
             }
           </div>
 
-          <div className="dcf-scenario">
+          <div className="dcf-scenarios">
             <div className="dcf-scenario-card bear">
-              <div style={{ fontSize: 10, color: 'var(--error)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Bear</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--error)' }}>₹{Math.round(bear.iv).toLocaleString('en-IN')}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+              <div style={{ fontSize: 9, color: 'var(--loss)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Bear</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--loss)', fontFamily: 'var(--font-mono)' }}>₹{Math.round(bear.iv).toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
                 {((bear.iv - cmp) / bear.iv * 100) >= 0 ? '+' : ''}{((bear.iv - cmp) / bear.iv * 100).toFixed(0)}% MOS
               </div>
             </div>
-            <div className="dcf-scenario-card" style={{ borderColor: 'var(--warning)' }}>
-              <div style={{ fontSize: 10, color: 'var(--warning)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Base</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>₹{Math.round(iv).toLocaleString('en-IN')}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+            <div className="dcf-scenario-card base">
+              <div style={{ fontSize: 9, color: 'var(--accent-primary)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Base</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>₹{Math.round(iv).toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
                 {mosPct >= 0 ? '+' : ''}{mosPct.toFixed(0)}% MOS
               </div>
             </div>
             <div className="dcf-scenario-card bull">
-              <div style={{ fontSize: 10, color: 'var(--success)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 6 }}>Bull</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--success)' }}>₹{Math.round(bull.iv).toLocaleString('en-IN')}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 4 }}>
+              <div style={{ fontSize: 9, color: 'var(--gain)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Bull</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--gain)', fontFamily: 'var(--font-mono)' }}>₹{Math.round(bull.iv).toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>
                 {((bull.iv - cmp) / bull.iv * 100) >= 0 ? '+' : ''}{((bull.iv - cmp) / bull.iv * 100).toFixed(0)}% MOS
               </div>
             </div>
           </div>
         </div>
 
-        <div className="card" style={{ padding: '16px' }}>
-          <div className="card-title">Value Decomposition</div>
+        <div className="panel" style={{ padding: '14px' }}>
+          <div className="panel-title">Value Decomposition</div>
           {[
-            ['FCF PV', pvFCFps, 'var(--primary)'],
-            ['Terminal PV', pvTps, 'var(--info)']
+            ['FCF PV', pvFCFps, 'var(--accent-primary)'],
+            ['Terminal PV', pvTps, 'var(--accent-secondary)']
           ].map(([l, v, c]) => (
-            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)', width: 80, flexShrink: 0 }}>{l}</span>
-              <div style={{ flex: 1, height: 8, background: 'var(--surface-hover)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${Math.min(v / total * 100, 100).toFixed(0)}%`, background: c, borderRadius: 4, transition: 'width 0.6s' }} />
+            <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 10, color: 'var(--text-secondary)', width: 70, flexShrink: 0 }}>{l}</span>
+              <div style={{ flex: 1, height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(v / total * 100, 100).toFixed(0)}%`, background: c, borderRadius: 3 }} />
               </div>
-              <span style={{ fontSize: 12, color: 'var(--text)', width: 60, textAlign: 'right', fontWeight: 600 }}>₹{Math.round(v).toLocaleString('en-IN')}</span>
+              <span style={{ fontSize: 11, color: 'var(--text-primary)', width: 55, textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>₹{Math.round(v).toLocaleString('en-IN')}</span>
             </div>
           ))}
         </div>

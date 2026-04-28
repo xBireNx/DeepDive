@@ -33,12 +33,12 @@ export default function Portfolio() {
 
   return (
     <div>
-      <div className="g4" style={{ marginBottom: 16 }}>
+      <div className="grid-4" style={{ marginBottom: 16 }}>
         {[
           ['Invested', `₹${totalInv.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, ''],
-          ['Current', `₹${totalCurr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, pnl >= 0 ? 'g' : 'r'],
-          ['Total P&L', `${pnl >= 0 ? '+' : ''}₹${Math.abs(pnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, pnl >= 0 ? 'g' : 'r'],
-          ['Overall Return', `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`, pct >= 0 ? 'g' : 'r']
+          ['Current', `₹${totalCurr.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, pnl >= 0 ? 'text-gain' : 'text-loss'],
+          ['Total P&L', `${pnl >= 0 ? '+' : ''}₹${Math.abs(pnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`, pnl >= 0 ? 'text-gain' : 'text-loss'],
+          ['Return', `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`, pct >= 0 ? 'text-gain' : 'text-loss']
         ].map(([l, v, c]) => (
           <div key={l} className="stat-card">
             <div className="stat-label">{l}</div>
@@ -49,10 +49,10 @@ export default function Portfolio() {
 
       <div className="layout-2col">
         <div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 80px 90px 100px auto', gap: 10, padding: '14px 16px', background: 'var(--surface-elevated)', borderBottom: '1px solid var(--border)' }}>
+          <div className="panel" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 80px 110px auto', gap: 8, padding: '12px 14px', background: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-subtle)' }}>
               {[
-                ['ticker', 'Ticker (e.g. KRN)'],
+                ['ticker', 'Ticker'],
                 ['qty', 'Qty'],
                 ['buyPrice', 'Buy ₹'],
                 ['date', 'Date']
@@ -65,15 +65,16 @@ export default function Portfolio() {
                   type={k === 'qty' || k === 'buyPrice' ? 'number' : k === 'date' ? 'date' : 'text'}
                   onChange={e => f(k, k === 'ticker' ? e.target.value.toUpperCase() : e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && doAdd()}
+                  style={{ fontSize: 12 }}
                 />
               ))}
-              <button className="btn-primary" onClick={doAdd} style={{ padding: '10px 16px' }}>+ Add</button>
+              <button className="btn-primary" onClick={doAdd} style={{ padding: '8px 12px', fontSize: 12 }}>+ Add</button>
             </div>
 
             <table className="p-table">
               <thead>
                 <tr>
-                  {['Stock', 'Qty', 'Buy', 'CMP', 'P&L', 'Return', 'Weight', 'Grade', ''].map(h => (
+                  {['Stock', 'Qty', 'Buy', 'CMP', 'P&L', 'Return', 'Wt%', 'Grade', ''].map(h => (
                     <th key={h}>{h}</th>
                   ))}
                 </tr>
@@ -81,7 +82,7 @@ export default function Portfolio() {
               <tbody>
                 {portfolio.length === 0 && (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 32, fontSize: 13 }}>
+                    <td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-dim)', padding: 28, fontSize: 12 }}>
                       No holdings. Add your first position above.
                     </td>
                   </tr>
@@ -94,25 +95,25 @@ export default function Portfolio() {
                   const rowPnl = curr ? curr - inv : null
                   const rowPct = curr && inv ? rowPnl / inv * 100 : null
                   const wt = totalCurr && curr ? (curr / totalCurr * 100).toFixed(1) : '—'
-                  const rc = rowPnl >= 0 ? 'cg' : 'cr'
+                  const rc = rowPnl >= 0 ? 'text-gain' : 'text-loss'
                   return (
                     <tr key={i}>
                       <td>
-                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{h.ticker}</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{h.ticker}</span>
                         {!d && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 6 }}>(not analyzed)</span>}
                       </td>
-                      <td>{h.qty}</td>
-                      <td>₹{h.buyPrice.toLocaleString('en-IN')}</td>
-                      <td>{cmp ? `₹${cmp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}</td>
-                      <td className={rowPnl !== null ? rc : 'cd'}>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>{h.qty}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>₹{h.buyPrice.toLocaleString('en-IN')}</td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>{cmp ? `₹${cmp.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}</td>
+                      <td className={rowPnl !== null ? rc : ''} style={{ fontFamily: 'var(--font-mono)' }}>
                         {rowPnl !== null ? `${rowPnl >= 0 ? '+' : ''}₹${Math.abs(rowPnl).toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : '—'}
                       </td>
-                      <td className={rowPct !== null ? rc : 'cd'}>
+                      <td className={rowPct !== null ? rc : ''} style={{ fontFamily: 'var(--font-mono)' }}>
                         {rowPct !== null ? `${rowPct >= 0 ? '+' : ''}${rowPct.toFixed(1)}%` : '—'}
                       </td>
-                      <td>{wt}%</td>
+                      <td style={{ fontFamily: 'var(--font-mono)' }}>{wt}%</td>
                       <td>
-                        <span style={{ color: gradeColor(d?.fundamental?.grade), fontWeight: 700 }}>
+                        <span style={{ color: gradeColor(d?.fundamental?.grade), fontWeight: 700, fontSize: 12 }}>
                           {d?.fundamental?.grade || '?'}
                         </span>
                       </td>
@@ -127,30 +128,30 @@ export default function Portfolio() {
           </div>
         </div>
 
-        <div className="sidebar-panel">
-          <div className="chart-card">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="chart-panel">
             <div className="chart-title">Sector Exposure</div>
-            <div style={{ height: 200 }}><SectorPie data={sectorMap} /></div>
+            <div style={{ height: 180 }}><SectorPie data={sectorMap} /></div>
           </div>
-          <div className="chart-card">
+          <div className="chart-panel">
             <div className="chart-title">Grade Mix</div>
-            <div style={{ height: 200 }}><GradeBar data={gradeMap} /></div>
+            <div style={{ height: 180 }}><GradeBar data={gradeMap} /></div>
           </div>
-          <div className="card">
-            <div className="card-title">Concentration Risk</div>
+          <div className="panel">
+            <div className="panel-title">Concentration Risk</div>
             {portfolio.length ? portfolio.map(h => {
               const d = stockCache[h.ticker]
               const w = totalCurr && d?.price?.current ? (h.qty * d.price.current / totalCurr * 100).toFixed(1) : 0
               return (
-                <div key={h.ticker} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)', width: 60 }}>{h.ticker}</span>
-                  <div style={{ flex: 1, height: 6, background: 'var(--surface-hover)', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${w}%`, background: w > 25 ? 'var(--error)' : w > 15 ? 'var(--warning)' : 'var(--success)', borderRadius: 3 }} />
+                <div key={h.ticker} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 10, color: 'var(--text-secondary)', width: 50 }}>{h.ticker}</span>
+                  <div style={{ flex: 1, height: 4, background: 'var(--bg-tertiary)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${w}%`, background: w > 25 ? 'var(--loss)' : w > 15 ? 'var(--warning)' : 'var(--gain)', borderRadius: 2 }} />
                   </div>
-                  <span style={{ fontSize: 11, color: 'var(--text)', width: 36, textAlign: 'right', fontWeight: 600 }}>{w}%</span>
+                  <span style={{ fontSize: 10, color: 'var(--text-primary)', width: 32, textAlign: 'right', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{w}%</span>
                 </div>
               )
-            }) : <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Add holdings to see risk</div>}
+            }) : <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>Add holdings to see risk</div>}
           </div>
         </div>
       </div>

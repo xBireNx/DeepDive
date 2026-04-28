@@ -31,33 +31,33 @@ export default function Checklist({ data }) {
   const state = checkState[sym] || {}
   const checked = CHECKLIST.filter(q => state[q.id]).length
   const pct = Math.round(checked / CHECKLIST.length * 100)
-  const readyColor = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--error)'
+  const readyColor = pct >= 80 ? 'var(--gain)' : pct >= 60 ? 'var(--warning)' : 'var(--loss)'
 
   return (
     <div>
-      <div className="sec">
-        <span className="sec-l">Investment Checklist{data ? ` — ${sym}` : ''}</span>
-        <div className="sec-line" style={{ flex: 1 }} />
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>{checked}/{CHECKLIST.length} PASSED</span>
+      <div className="section-header">
+        <span className="section-title">Investment Checklist{data ? ` — ${sym}` : ''}</span>
+        <div className="section-line" style={{ flex: 1 }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{checked}/{CHECKLIST.length} PASSED</span>
       </div>
 
-      <div style={{ height: 8, background: 'var(--surface-hover)', borderRadius: 4, overflow: 'hidden', marginBottom: 28 }}>
-        <div style={{ height: '100%', width: `${pct}%`, background: readyColor, borderRadius: 4, transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+      <div className="progress-bar" style={{ height: 6, marginBottom: 24 }}>
+        <div className="progress-fill" style={{ width: `${pct}%`, background: readyColor }} />
       </div>
 
       <div className="layout-2col">
         <div>
           {CATS.map(cat => (
-            <div key={cat} style={{ marginBottom: 28 }}>
+            <div key={cat} style={{ marginBottom: 24 }}>
               <div style={{
-                fontSize: 12,
+                fontSize: 11,
                 color: 'var(--text-dim)',
                 fontWeight: 700,
-                letterSpacing: 1,
+                letterSpacing: 0.5,
                 textTransform: 'uppercase',
-                marginBottom: 14,
-                paddingBottom: 10,
-                borderBottom: '1px solid var(--border)'
+                marginBottom: 12,
+                paddingBottom: 8,
+                borderBottom: '1px solid var(--border-subtle)'
               }}>
                 {cat}
               </div>
@@ -70,12 +70,11 @@ export default function Checklist({ data }) {
                     {state[q.id] && <span>✓</span>}
                   </div>
                   <div style={{
-                    fontSize: 14,
-                    color: state[q.id] ? 'var(--text-dim)' : 'var(--text)',
-                    lineHeight: 1.6,
+                    fontSize: 13,
+                    color: state[q.id] ? 'var(--text-dim)' : 'var(--text-primary)',
+                    lineHeight: 1.5,
                     flex: 1,
                     textDecoration: state[q.id] ? 'line-through' : undefined,
-                    transition: 'color 0.2s'
                   }}>
                     {q.text}
                   </div>
@@ -85,33 +84,33 @@ export default function Checklist({ data }) {
           ))}
         </div>
 
-        <div className="sidebar-panel">
-          <div className="card" style={{ textAlign: 'center', padding: '32px 24px' }}>
-            <div className="card-title">Readiness Score</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 60, fontWeight: 800, color: readyColor, lineHeight: 1 }}>{pct}%</div>
-            <div style={{ fontSize: 13, color: 'var(--text-dim)', marginTop: 10, fontWeight: 600 }}>{checked} of {CHECKLIST.length} checks completed</div>
-            <div style={{ marginTop: 24, fontSize: 15, fontWeight: 700, color: readyColor, padding: '12px', borderRadius: 10, background: `${readyColor}15` }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="panel" style={{ textAlign: 'center', padding: '24px 16px' }}>
+            <div className="panel-title">Readiness Score</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 52, fontWeight: 800, color: readyColor, lineHeight: 1 }}>{pct}%</div>
+            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8, fontWeight: 600 }}>{checked} of {CHECKLIST.length} checks completed</div>
+            <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: readyColor, padding: '10px 14px', borderRadius: 8, background: `${readyColor}15` }}>
               {pct >= 80 ? 'INVESTMENT READY' : pct >= 60 ? 'PROCEED WITH CAUTION' : 'INSUFFICIENT DATA'}
             </div>
-            <button className="btn-outline" style={{ marginTop: 24, width: '100%', padding: '14px' }} onClick={() => resetChecklist(sym)}>Clear All Checks</button>
+            <button className="btn-secondary" style={{ marginTop: 20, width: '100%' }} onClick={() => resetChecklist(sym)}>Clear All Checks</button>
           </div>
 
-          <div className="card" style={{ padding: '24px 20px' }}>
-            <div className="card-title">Investment Principles</div>
-            <div style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.9 }}>
-              <div style={{ marginBottom: 12 }}>
-                <strong style={{ color: 'var(--text)' }}>Rule 1:</strong> Never lose money.
+          <div className="panel" style={{ padding: '16px' }}>
+            <div className="panel-title">Investment Principles</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+              <div style={{ marginBottom: 10 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Rule 1:</strong> Never lose money.
               </div>
-              <div style={{ marginBottom: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                <strong style={{ color: 'var(--text)' }}>Rule 2:</strong> Never forget Rule 1.
+              <div style={{ marginBottom: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Rule 2:</strong> Never forget Rule 1.
               </div>
-              <div style={{ fontStyle: 'italic', marginBottom: 16, padding: '12px 16px', background: 'var(--surface-hover)', borderRadius: 8, borderLeft: '3px solid var(--primary)' }}>
+              <div style={{ fontStyle: 'italic', marginBottom: 12, padding: '10px 12px', background: 'var(--bg-tertiary)', borderRadius: 6, borderLeft: '3px solid var(--accent-primary)', fontSize: 12 }}>
                 "Price is what you pay. Value is what you get."
               </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong style={{ color: 'var(--text)' }}>Strategy:</strong> Buy right, sit tight.
+              <div style={{ marginBottom: 6 }}>
+                <strong style={{ color: 'var(--text-primary)' }}>Strategy:</strong> Buy right, sit tight.
               </div>
-              <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
                 Conviction is built through deep research, not market noise.
               </div>
             </div>
