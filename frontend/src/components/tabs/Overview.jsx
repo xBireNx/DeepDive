@@ -1,54 +1,71 @@
-import { fN, fCr, gradeColor, vc, scoreColor } from '../../utils'
+import { useState } from 'react'
+import { fN, fCr, gradeColor, scoreColor } from '../../utils'
 import { PriceChart, QuarterlyChart, DonutChart, ScoreRadar } from '../charts'
-import { useStore } from '../../store'
 
-const SecHeader = ({ label, children }) => (
-  <div className="section-header">
+const SecHeader = ({ label, children, collapsed, onToggle }) => (
+  <div className="section-header" onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginTop: 20, marginBottom: 12 }}>
     <span className="section-title">{label}</span>
-    <div className="section-line" />
+    <div className="section-line" style={{ flex: 1 }} />
     {children}
+    {onToggle && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{collapsed ? '▼' : '▲'}</span>}
   </div>
 )
 
-function ScoreCard({ card }) {
+function ScoreCard({ card, collapsed }) {
+  if (collapsed) return null
   const bc = scoreColor(card.score, card.max_score)
   return (
-    <div className="panel">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{card.category}</span>
-        <div className="progress-bar" style={{ width: 70 }}>
+    <div className="panel" style={{ padding: 12, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>{card.category}</span>
+        <div className="progress-bar" style={{ width: 50 }}>
           <div className="progress-fill" style={{ width: `${card.score / card.max_score * 100}%`, background: bc }} />
         </div>
-        <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{card.score}/{card.max_score}</span>
+        <span style={{ fontSize: 9, color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>{card.score}/{card.max_score}</span>
       </div>
-      {card.narrative && <p style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 10 }}>{card.narrative}</p>}
-      <table className="data-table"><tbody>
-        {(card.signals || []).map(([n, v, vr], i) => (
-          <tr key={i}><td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>{n}</td><td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text-primary)' }}>{v}</td><td style={{ padding: '8px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }} className={vc(vr)}>{vr}</td></tr>
+      {card.narrative && <p style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: 6 }}>{card.narrative}</p>}
+      <div style={{ fontSize: 10 }}>
+        {(card.signals || []).slice(0, 3).map(([n, v], i) => (
+          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', borderBottom: '1px solid var(--border-subtle)' }}>
+            <span style={{ color: 'var(--text-tertiary)' }}>{n}</span>
+            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{v}</span>
+          </div>
         ))}
-      </tbody></table>
+      </div>
     </div>
   )
 }
 
 export default function Overview({ data }) {
+  const [collapsed, setCollapsed] = useState({})
+  const toggleSection = (key) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
+
   if (!data) return (
     <div className="empty-state">
       <div className="empty-icon">◈</div>
       <div className="empty-title">Select a stock to analyze</div>
-      <div className="empty-hint">Search and add stocks from the sidebar</div>
+      <div className="empty-hint">Search and add stocks from sidebar</div>
     </div>
   )
 
-  const { company, price, ratios, fundamental, technical, shareholding, quarterly, aceInvestors, promoterHistory, priceHistory, dividends } = data
+  const { company, price, ratios, fundamental, technical, shareholding, quarterly, promoterHistory, dividends, priceHistory } = data
   const r = ratios || {}
   const f = fundamental || {}
   const t = technical || {}
   const isPos = (price?.ret1m || 0) >= 0
   const cc = isPos ? 'var(--gain)' : 'var(--loss)'
-  const rp = ((((price?.current || 0) - (price?.week52Low || 0)) / ((price?.week52High || 1) - (price?.week52Low || 0))) * 100).toFixed(1)
-  const beneishColor = f.beneish?.score < -2.22 ? 'var(--gain)' : f.beneish?.score < -1.78 ? 'var(--warning)' : 'var(--loss)'
-  const altmanColor = f.altman?.score > 2.99 ? 'var(--gain)' : f.altman?.score > 1.81 ? 'var(--warning)' : 'var(--loss)'
+  
+  const calcRp = () => {
+    const curr = price?.current || 0
+    const low = price?.week52Low || 0
+    const high = price?.week52High || 1
+    if (high === low) return 50
+    return (((curr - low) / (high - low)) * 100).toFixed(1)
+  }
+  const rp = calcRp()
+  
+  const beneishColor = f.beneish?.score < -2.22 ? 'var(--gain)' : f.beneish?.score < -1.78 ? 'var(--warning)' : f.beneish?.score ? 'var(--loss)' : 'var(--text-dim)'
+  const altmanColor = f.altman?.score > 2.99 ? 'var(--gain)' : f.altman?.score > 1.81 ? 'var(--warning)' : f.altman?.score ? 'var(--loss)' : 'var(--text-dim)'
   const trendCol = t.longPct >= 60 ? 'var(--gain)' : t.longPct <= 40 ? 'var(--loss)' : 'var(--warning)'
 
   const statCards = [
@@ -63,262 +80,201 @@ export default function Overview({ data }) {
   ]
 
   return (
-    <div>
+    <div style={{ padding: '0 0 20px 0' }}>
       {/* Hero Section */}
-      <div className="hero-section">
-        <div className="hero-left">
-          <div className="hero-ticker">{data.symbol}</div>
-          <div className="hero-name">{company?.name}</div>
-          <div className="hero-meta">
-            <span>{company?.sector}</span>
-            <span>|</span>
-            <span>{company?.industry}</span>
-            <span>|</span>
-            <span>MCap {fCr(company?.market_cap_cr)}</span>
+      <div className="hero-section" style={{ padding: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+          <div style={{ flex: 1, minWidth: 150 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+              <span className="hero-ticker" style={{ fontSize: 24 }}>{data.symbol}</span>
+              {f.grade && <span className="grade-badge" style={{ fontSize: 14 }}>{f.grade}</span>}
+            </div>
+            <div className="hero-name" style={{ fontSize: 12, marginBottom: 6 }}>{company?.name || 'N/A'}</div>
+            <div className="hero-meta" style={{ fontSize: 10, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {company?.sector && <span style={{ color: 'var(--accent-primary)' }}>{company.sector}</span>}
+              {company?.sector && company?.industry && <span style={{ color: 'var(--text-dim)' }}>•</span>}
+              {company?.industry && <span style={{ color: 'var(--text-dim)' }}>{company.industry}</span>}
+              {company?.market_cap_cr && <><span style={{ color: 'var(--text-dim)' }}>•</span><span>MCap {fCr(company.market_cap_cr)}</span></>}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div className="hero-price" style={{ fontSize: 22 }}>₹{(price?.current || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
+            <div className="hero-change" style={{ color: cc, fontSize: 12 }}>
+              {isPos ? '↑' : '↓'} {(price?.ret1m || 0).toFixed(2)}% (1M)
+            </div>
           </div>
         </div>
-        <div className="hero-right">
-          <div className="hero-price">₹{(price?.current || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
-          <div className="hero-change" style={{ color: cc }}>
-            {isPos ? '↑' : '↓'} {(price?.ret1m || 0).toFixed(2)}% (1M)
+        
+        {/* Quick Stats Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg-tertiary)', borderRadius: 6, fontSize: 10 }}>
+            <span style={{ color: 'var(--text-dim)' }}>52W Low</span>
+            <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>₹{price?.week52Low || '—'}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--bg-tertiary)', borderRadius: 6, fontSize: 10 }}>
+            <span style={{ color: 'var(--text-dim)' }}>52W High</span>
+            <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>₹{price?.week52High || '—'}</span>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid-4">
+      <div className="grid-4" style={{ marginBottom: 12 }}>
         {statCards.map(([l, v, c]) => (
-          <div key={l} className="stat-card">
-            <div className="stat-label">{l}</div>
-            <div className={`stat-value ${c}`}>{v}</div>
+          <div key={l} className="stat-card" style={{ padding: 10 }}>
+            <div className="stat-label" style={{ fontSize: 9 }}>{l}</div>
+            <div className={`stat-value ${c}`} style={{ fontSize: 16 }}>{v}</div>
           </div>
         ))}
       </div>
 
-      {/* Charts */}
-      <SecHeader label="Analysis Overview" />
-      <div className="grid-3">
-        <div className="chart-panel">
-          <div className="chart-title">Price Trend (60D)</div>
-          <div style={{ height: 180 }}><PriceChart data={priceHistory || []} /></div>
+      {/* 52W Range */}
+      <div className="panel" style={{ padding: 12, marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>52-Week Range</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-primary)' }}>{rp}%</span>
         </div>
-        <div className="chart-panel">
-          <div className="chart-title">Quarterly Performance</div>
-          <div style={{ height: 180 }}><QuarterlyChart data={quarterly || []} /></div>
+        <div className="progress-bar" style={{ height: 4 }}>
+          <div className="progress-fill" style={{ width: `${rp}%` }} />
         </div>
-        <div className="chart-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div className="chart-title">Shareholding</div>
-          <div style={{ height: 180, width: '100%' }}><DonutChart data={shareholding || {}} /></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 9, color: 'var(--text-dim)' }}>
+          <span>₹{price?.week52Low || '—'}</span>
+          <span>₹{price?.week52High || '—'}</span>
         </div>
       </div>
 
-      {/* Business Description */}
-      {company?.description && (
-        <div className="panel">
-          <div className="panel-title">Business Description</div>
-          <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{company.description}</p>
+      {/* Charts Section */}
+      <SecHeader label="Charts" collapsed={collapsed.charts} onToggle={() => toggleSection('charts')} />
+      {!collapsed.charts && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 12 }}>
+          <div className="chart-panel">
+            <div className="chart-title">Price Trend</div>
+            <div style={{ height: 120 }}><PriceChart data={priceHistory || []} /></div>
+          </div>
+          <div className="chart-panel">
+            <div className="chart-title">Quarterly</div>
+            <div style={{ height: 120 }}><QuarterlyChart data={quarterly || []} /></div>
+          </div>
+          <div className="chart-panel">
+            <div className="chart-title">Shareholding</div>
+            <div style={{ height: 120 }}><DonutChart data={shareholding || {}} /></div>
+          </div>
         </div>
       )}
 
-      {/* 52W Range */}
-      <div className="panel">
-        <div className="panel-title">52-Week Range</div>
-        <div style={{ marginTop: 12 }}>
-          <div className="progress-bar" style={{ height: 8 }}>
-            <div className="progress-fill" style={{ width: `${rp}%` }} />
+      {/* Fundamental Score */}
+      <SecHeader label="Fundamental" collapsed={collapsed.fundamental} onToggle={() => toggleSection('fundamental')} />
+      {!collapsed.fundamental && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+            <div className="panel" style={{ padding: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: gradeColor(f.grade) }}>{f.grade || '?'}</div>
+              <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Grade</div>
+              <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{f.overallPct || 0}%</div>
+            </div>
+            <div className="panel" style={{ padding: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: beneishColor }}>{f.beneish?.score?.toFixed(1) || '—'}</div>
+              <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Beneish</div>
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{f.beneish?.verdict || 'N/A'}</div>
+            </div>
+            <div className="panel" style={{ padding: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: altmanColor }}>{f.altman?.score?.toFixed(1) || '—'}</div>
+              <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Altman Z</div>
+              <div style={{ fontSize: 9, color: 'var(--text-secondary)' }}>{f.altman?.verdict || 'N/A'}</div>
+            </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>LOW</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>₹{price?.week52Low || '—'}</div>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 10, color: 'var(--accent-primary)' }}>CURRENT</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--accent-primary)' }}>{rp}%</div>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>HIGH</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>₹{price?.week52High || '—'}</div>
-            </div>
+          <div className="grid-2" style={{ gap: 10 }}>
+            {(f.scorecards || []).map(card => <ScoreCard key={card.category} card={card} collapsed={false} />)}
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* Fundamental Analysis */}
-      <SecHeader label="Buffett & RJ Analysis">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 800, color: gradeColor(f.grade) }}>{f.grade || '?'}</div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)' }}>{f.overallPct || 0}% Score</div>
-        </div>
-      </SecHeader>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
-        <div className="panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div className="panel-title">Score Breakdown</div>
-          <ScoreRadar scorecards={f.scorecards || []} />
-        </div>
-        <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {(f.scorecards || []).map(c => (
-            <div key={c.category} className="score-row">
-              <span className="score-label" style={{ fontSize: 11 }}>{c.category}</span>
-              <div className="score-bar">
-                <div className="score-fill" style={{ width: `${c.score / c.max_score * 100}%`, background: scoreColor(c.score, c.max_score) }} />
+      {/* Technical */}
+      <SecHeader label="Technical" collapsed={collapsed.technical} onToggle={() => toggleSection('technical')} />
+      {!collapsed.technical && (
+        <div className="panel" style={{ padding: 12, marginBottom: 12 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+            <div style={{ minWidth: 60 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Trend</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: trendCol }}>{t.trend || '—'}</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 80 }}>
+              <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 4 }}>Long {t.longPct || 50}%</div>
+              <div className="progress-bar" style={{ height: 3 }}>
+                <div className="progress-fill" style={{ width: `${t.longPct || 50}%` }} />
               </div>
-              <span className="score-value">{c.score}/{c.max_score}</span>
             </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid-2">
-        {(f.scorecards || []).map(card => <ScoreCard key={card.category} card={card} />)}
-      </div>
-
-      {/* Financial Integrity */}
-      <SecHeader label="Financial Integrity & Risk" />
-      <div className="grid-2">
-        <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 30, fontWeight: 800, color: beneishColor }}>{(f.beneish?.score || 0).toFixed(2)}</div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Beneish M-Score</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{f.beneish?.verdict || 'Not available'}</div>
-          </div>
-        </div>
-        <div className="panel" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 30, fontWeight: 800, color: altmanColor }}>{(f.altman?.score || 0).toFixed(1)}</div>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>Altman Z-Score</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{f.altman?.verdict || 'Not available'}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Technical Analysis */}
-      <SecHeader label="Technical Market Stance" />
-      <div className="panel">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 700, textTransform: 'uppercase' }}>Market Trend</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 800, color: trendCol, marginTop: 4 }}>{t.trend || '—'}</div>
-          </div>
-          <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', marginBottom: 6 }}>
-              <span>LONG {t.longPct || 50}%</span><span>SHORT {100 - (t.longPct || 50)}%</span>
-            </div>
-            <div className="progress-bar" style={{ height: 6 }}>
-              <div className="progress-fill" style={{ width: `${t.longPct || 50}%` }} />
+            <div style={{ display: 'flex', gap: 12 }}>
+              {[['RSI', t.rsiVal], ['MACD', t.macdVerdict], ['ADX', t.adxVal]].map(([k, v]) => (
+                <div key={k} style={{ textAlign: 'center', minWidth: 40 }}>
+                  <div style={{ fontSize: 8, color: 'var(--text-dim)' }}>{k}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700 }}>{v || '—'}</div>
+                </div>
+              ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {[['RSI', t.rsiVal], ['MACD', t.macdVerdict], ['ADX', t.adxVal]].map(([k, v]) => (
-              <div key={k}>
-                <div style={{ fontSize: 10, color: 'var(--text-dim)', fontWeight: 700 }}>{k}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>{v || '—'}</div>
-              </div>
-            ))}
-          </div>
+          {t.narrative && <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>{t.narrative}</div>}
         </div>
-        {t.narrative && <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7, marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border-subtle)' }}>{t.narrative}</div>}
-      </div>
-
-      <div className="grid-2">
-        <div className="panel">
-          <div className="panel-title">Market Signals</div>
-          <table className="data-table"><tbody>
-            {(t.signals || []).map(([n, v, vr, cl], i) => (
-              <tr key={i}><td style={{ padding: '10px 0', color: 'var(--text-tertiary)' }}>{n}</td><td style={{ padding: '10px 10px', fontWeight: 600 }}>{v}</td><td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }} className={cl || vc(vr)}>{vr}</td></tr>
-            ))}
-          </tbody></table>
-        </div>
-        <div className="panel">
-          <div className="panel-title">Support & Resistance</div>
-          <table className="data-table"><tbody>
-            <tr><td style={{ padding: '10px 0', color: 'var(--text-tertiary)' }}>Support (50D)</td><td style={{ padding: '10px 10px', fontWeight: 600 }}>₹{t.supportResistance?.support_50d || '—'}</td><td style={{ padding: '10px 0', textAlign: 'right', color: 'var(--gain)' }}>Floor</td></tr>
-            <tr><td style={{ padding: '10px 0', color: 'var(--text-tertiary)' }}>Resistance (50D)</td><td style={{ padding: '10px 10px', fontWeight: 600 }}>₹{t.supportResistance?.resistance_50d || '—'}</td><td style={{ padding: '10px 0', textAlign: 'right', color: 'var(--text-dim)' }}>Ceiling</td></tr>
-            <tr><td style={{ padding: '10px 0', color: 'var(--text-tertiary)' }}>Volume vs Avg</td><td style={{ padding: '10px 10px', fontWeight: 600 }}>{t.volumeAnalysis?.ratio || '—'}x</td><td style={{ padding: '10px 0', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600 }} className={vc(t.volumeAnalysis?.verdict || '')}>{t.volumeAnalysis?.verdict || '—'}</td></tr>
-          </tbody></table>
-        </div>
-      </div>
+      )}
 
       {/* Ownership */}
-      <SecHeader label="Ownership & Quarterly" />
-      <div className="grid-2">
-        <div className="panel">
-          <div className="panel-title">Shareholding Distribution</div>
-          <table className="data-table"><tbody>
-            {Object.entries(shareholding || {}).map(([k, v]) => (
-              <tr key={k}><td style={{ padding: '10px 0', color: 'var(--text-tertiary)' }}>{k.charAt(0).toUpperCase() + k.slice(1)}</td><td style={{ padding: '10px 10px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{v}%</td><td style={{ padding: '10px 0', textAlign: 'right', color: k === 'promoter' ? 'var(--gain)' : 'var(--text-dim)' }}>●</td></tr>
-            ))}
-          </tbody></table>
-          {promoterHistory?.length >= 2 && (
-            <div style={{ marginTop: 12, fontSize: 11, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>Promoter:</span>
-              <span style={{ fontWeight: 700, color: promoterHistory[0]?.pct > promoterHistory[promoterHistory.length - 1]?.pct ? 'var(--gain)' : 'var(--loss)' }}>
-                {promoterHistory[0]?.pct > promoterHistory[promoterHistory.length - 1]?.pct ? '↑' : '↓'}
-              </span>
-            </div>
-          )}
-          {aceInvestors?.length > 0 && (
-            <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {aceInvestors.map(a => <span key={a} className="badge" style={{ background: 'var(--accent-secondary-dim)', color: 'var(--accent-secondary)' }}>{a}</span>)}
-            </div>
-          )}
+      <SecHeader label="Ownership" collapsed={collapsed.ownership} onToggle={() => toggleSection('ownership')} />
+      {!collapsed.ownership && (
+        <div className="grid-2" style={{ gap: 10, marginBottom: 12 }}>
+          <div className="panel" style={{ padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8 }}>Shareholding</div>
+            {shareholding && Object.keys(shareholding).length > 0 ? (
+              Object.entries(shareholding).map(([k, v]) => (
+                <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 11 }}>
+                  <span style={{ color: 'var(--text-tertiary)' }}>{k.charAt(0).toUpperCase() + k.slice(1)}</span>
+                  <span style={{ fontWeight: 600 }}>{v}%</span>
+                </div>
+              ))
+            ) : <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>No data</div>}
+          </div>
+          <div className="panel" style={{ padding: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8 }}>Quarterly</div>
+            {quarterly?.length > 0 ? (
+              [...quarterly].reverse().slice(0, 3).map((q, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', fontSize: 10, borderBottom: '1px solid var(--border-subtle)' }}>
+                  <span style={{ fontWeight: 600 }}>{q.quarter || ''}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>₹{fN(q.revenue, '', 'Cr', 0)}</span>
+                  <span style={{ color: 'var(--gain)' }}>₹{fN(q.net_profit, '', 'Cr', 0)}</span>
+                </div>
+              ))
+            ) : <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>No data</div>}
+          </div>
         </div>
-        <div className="panel">
-          <div className="panel-title">Quarterly Trends</div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th style={{ fontSize: 10, padding: '8px 10px' }}>QTR</th>
-                <th style={{ fontSize: 10, padding: '8px 10px' }}>REV</th>
-                <th style={{ fontSize: 10, padding: '8px 10px' }}>NP</th>
-                <th style={{ fontSize: 10, padding: '8px 10px', textAlign: 'right' }}>OPM%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...(quarterly || [])].reverse().slice(0, 5).map((q, i) => (
-                <tr key={i}>
-                  <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{q.quarter || ''}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)' }}>{fN(q.revenue, '₹', 'Cr', 0)}</td>
-                  <td style={{ color: 'var(--gain)', fontFamily: 'var(--font-mono)' }}>{fN(q.net_profit, '₹', 'Cr', 1)}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{fN(q.opm, '', '%', 1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
       {/* Dividends */}
       {dividends?.has_dividends && (
-        <div className="panel">
-          <div className="panel-title">Dividend History (Buffett Indicator)</div>
-          <div style={{ display: 'flex', gap: 20, marginBottom: 14 }}>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Frequency</div>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{dividends.payout_frequency}</div>
+        <>
+          <SecHeader label="Dividends" collapsed={collapsed.dividends} onToggle={() => toggleSection('dividends')} />
+          {!collapsed.dividends && (
+            <div className="panel" style={{ padding: 12, marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Frequency</div>
+                  <div style={{ fontSize: 11, fontWeight: 700 }}>{dividends.payout_frequency || 'N/A'}</div>
+                </div>
+                {dividends.avg_yield && (
+                  <div>
+                    <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>Yield</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--gain)' }}>{(dividends.avg_yield * 100).toFixed(2)}%</div>
+                  </div>
+                )}
+              </div>
+              {dividends.track_record?.length > 0 && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {dividends.track_record.slice(0, 3).map((d, i) => (
+                    <span key={i} style={{ fontSize: 10, padding: '3px 6px', background: 'var(--bg-tertiary)', borderRadius: 4 }}>₹{d.amount}</span>
+                  ))}
+                </div>
+              )}
             </div>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>5Y Avg</div>
-              <div style={{ fontSize: 13, fontWeight: 700 }}>₹{dividends.avg_payout_5y}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>Yield</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--gain)' }}>{(r.dividend_yield * 100).toFixed(2)}%</div>
-            </div>
-          </div>
-          <table className="data-table">
-            <thead><tr><th style={{ fontSize: 10 }}>Date</th><th style={{ fontSize: 10, textAlign: 'right' }}>Amount</th></tr></thead>
-            <tbody>
-              {(dividends.track_record || []).slice(0, 5).map((d, i) => (
-                <tr key={i}>
-                  <td style={{ color: 'var(--text-dim)' }}>{d.date}</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--gain)' }}>₹{d.amount.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          )}
+        </>
       )}
     </div>
   )

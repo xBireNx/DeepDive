@@ -14,7 +14,18 @@ function calcPosition(pf, cmp, sl, riskPct, winRate, rr) {
   return { rec, amount, ffShares, kShares, fullKelly, halfKelly, maxRisk, perShare, weight: pf > 0 ? amount / pf * 100 : 0 }
 }
 
+const SecHeader = ({ label, collapsed, onToggle }) => (
+  <div onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginBottom: 12, marginTop: 16 }}>
+    <span className="section-title">{label}</span>
+    <div className="section-line" style={{ flex: 1 }} />
+    {onToggle && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{collapsed ? '▼' : '▲'}</span>}
+  </div>
+)
+
 export default function Sizer({ data }) {
+  const [collapsed, setCollapsed] = useState({})
+  const toggleSection = (key) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
+
   const cmp = data?.price?.current || 0
   const [pf, setPf] = useState(1000000)
   const [price, setPrice] = useState(cmp)
@@ -26,81 +37,88 @@ export default function Sizer({ data }) {
   const res = calcPosition(pf, price || cmp, sl, risk, win, rr)
 
   return (
-    <div>
-      <div className="sec">
-        <span className="sec-l">Position Sizing Calculator{data ? ` — ${data.symbol}` : ''}</span>
-        <div className="sec-line" style={{ flex: 1 }} />
+    <div style={{ padding: '0 0 20px 0' }}>
+      <div style={{ 
+        background: 'var(--bg-secondary)', 
+        border: '1px solid var(--border-default)', 
+        borderRadius: 14, 
+        padding: 16, 
+        marginBottom: 16 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Position Sizer</span>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{data?.symbol || ''}</span>
+          </div>
+        </div>
       </div>
 
-      <div className="layout-2col">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
-          <div className="card" style={{ marginBottom: 14 }}>
-            <div className="card-title">Kelly Criterion + Fixed Fractional</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {[
-                ['Portfolio Size (₹)', pf, setPf, 'number', 'e.g. 1000000'],
-                ['Current Price (₹)', price || cmp, setPrice, 'number', `e.g. ${cmp}`],
-                ['Stop-Loss Price (₹)', sl, setSl, 'number', `e.g. ${Math.round(cmp * 0.9)}`],
-                ['Max Risk per Trade (%)', risk, setRisk, 'number', 'e.g. 2'],
-                ['Win Rate (%)', win, setWin, 'number', 'Your estimate, e.g. 60'],
-                ['Reward / Risk Ratio', rr, setRr, 'number', 'e.g. 2'],
-              ].map(([l, v, s, t, p]) => (
-                <div key={l}>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{l}</div>
-                  <input className="input" type={t} placeholder={p} value={v} onChange={e => s(parseFloat(e.target.value) || 0)} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="card">
-            <div className="card-title">Kelly Criterion Explained</div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 2 }}>
-              <div style={{ marginBottom: 8 }}><strong style={{ color: 'var(--text)' }}>Full Kelly</strong> = (Win Rate × RR − Loss Rate) / RR</div>
-              <div style={{ marginBottom: 8 }}><strong style={{ color: 'var(--text)' }}>Half Kelly</strong> = Full Kelly / 2 (recommended — less volatility)</div>
-              <div style={{ marginBottom: 8 }}><strong style={{ color: 'var(--text)' }}>Fixed Fractional</strong> = Max Risk ÷ Per-Share Risk</div>
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8, fontSize: 11 }}>
-                We use the smaller of the two for safety. Never risk more than 2% of portfolio on a single trade.
+          <SecHeader label="Inputs" collapsed={collapsed.inputs} onToggle={() => toggleSection('inputs')} />
+          {!collapsed.inputs && (
+            <div className="panel" style={{ padding: 14, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                {[
+                  ['Portfolio (₹)', pf, setPf],
+                  ['Price (₹)', price || cmp, setPrice],
+                  ['Stop-Loss (₹)', sl, setSl],
+                  ['Risk %', risk, setRisk],
+                  ['Win Rate %', win, setWin],
+                  ['R:R Ratio', rr, setRr],
+                ].map(([l, v, s], i) => (
+                  <div key={i}>
+                    <div style={{ fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>{l}</div>
+                    <input className="input" type="number" value={v} onChange={e => s(parseFloat(e.target.value) || 0)} style={{ fontSize: 12 }} />
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          )}
+
+          <SecHeader label="Kelly Criterion" collapsed={collapsed.kelly} onToggle={() => toggleSection('kelly')} />
+          {!collapsed.kelly && (
+            <div className="panel" style={{ padding: 14 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                <div><strong>Full Kelly</strong> = (Win Rate × RR − Loss Rate) / RR</div>
+                <div><strong>Half Kelly</strong> = Full Kelly / 2 (recommended)</div>
+                <div><strong>Fixed Fractional</strong> = Max Risk ÷ Per-Share Risk</div>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8, marginTop: 8, fontSize: 10, color: 'var(--text-dim)' }}>
+                  {'Use smaller of the two. Never risk > 2% per trade.'}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
           {res ? (
             <>
-              <div className="card" style={{ textAlign: 'center', marginBottom: 14, border: '2px solid var(--success)', background: 'var(--success-muted)' }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 42, fontWeight: 800, color: 'var(--success)' }}>{res.rec.toLocaleString('en-IN')}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 6 }}>Recommended Shares</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginTop: 12 }}>₹{res.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{res.weight.toFixed(1)}% of portfolio</div>
+              <div className="panel" style={{ textAlign: 'center', padding: 20, marginBottom: 12, border: '2px solid var(--gain)', background: 'var(--gain-dim)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 36, fontWeight: 800, color: 'var(--gain)' }}>{res.rec.toLocaleString('en-IN')}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 4 }}>Recommended Shares</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', marginTop: 12 }}>₹{res.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>{res.weight.toFixed(1)}% of portfolio</div>
               </div>
-              <div className="card">
-                <div className="card-title">Breakdown</div>
-                <table className="stbl">
-                  <tbody>
-                    {[
-                      [`Max Risk (${risk}%)`, `₹${res.maxRisk.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
-                      ['Per-share risk', `₹${res.perShare.toFixed(1)}`],
-                      ['Fixed Fractional shares', res.ffShares.toLocaleString()],
-                      ['Full Kelly %', `${(res.fullKelly * 100).toFixed(1)}%`],
-                      ['Half Kelly shares', res.kShares.toLocaleString()],
-                      ['Recommended (min of both)', `${res.rec.toLocaleString()} shares`],
-                    ].map(([l, v]) => (
-                      <tr key={l}>
-                        <td className="tl">{l}</td>
-                        <td className="tm" style={{ textAlign: 'right', color: 'var(--success)', fontWeight: 700 }}>{v}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="panel" style={{ padding: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 10 }}>Breakdown</div>
+                {[
+                  ['Max Risk', `₹${res.maxRisk.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`],
+                  ['Per-share risk', `₹${res.perShare.toFixed(1)}`],
+                  ['Fixed Frac shares', res.ffShares.toLocaleString()],
+                  ['Full Kelly %', `${(res.fullKelly * 100).toFixed(1)}%`],
+                  ['Half Kelly shares', res.kShares.toLocaleString()],
+                ].map(([l, v]) => (
+                  <div key={l} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 11 }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{l}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{v}</span>
+                  </div>
+                ))}
               </div>
             </>
           ) : (
-            <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--text-dim)', fontSize: 13 }}>
-              Enter portfolio size, current price, and stop-loss to calculate position size.
-              <br /><br />
-              Stop-loss must be below current price.
+            <div className="panel" style={{ padding: 20, textAlign: 'center', color: 'var(--text-dim)', fontSize: 11 }}>
+              Enter portfolio, price, and stop-loss.<br />SL must be below current price.
             </div>
           )}
         </div>

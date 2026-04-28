@@ -1,9 +1,10 @@
 """
-Advanced Analysis: DuPont, WC Trend, Relative Return vs Nifty, Red Flags, Promoter Transactions
+Advanced Analysis: DuPont, WC Trend, Relative Return vs Nifty, Red Flags, 
+Promoter Transactions, FII/DII, Bulk Deals, Altman Z-Score, Cash Flow Analysis
 """
 import pandas as pd, numpy as np, requests, yfinance as yf
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 
@@ -14,6 +15,9 @@ def _s(series, i=0):
         return float(s.iloc[i]) if len(s) > i else None
     except: return None
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DU PONT ANALYSIS
+# ─────────────────────────────────────────────────────────────────────────────
 def compute_dupont(fin, ratios):
     trend = []
     rev = fin.get("revenue"); pat = fin.get("net_profit")
@@ -34,6 +38,9 @@ def compute_dupont(fin, ratios):
         else: insight="ROE composition stable."
     return {"trend":trend,"current":trend[0] if trend else {},"insight":insight}
 
+# ─────────────────────────────────────────────────────────────────────────────
+# WORKING CAPITAL TREND
+# ─────────────────────────────────────────────────────────────────────────────
 def compute_wc_trend(quarterly_results):
     if not quarterly_results or len(quarterly_results)<3:
         return {"trend":[],"insight":"Insufficient quarterly data."}
@@ -57,6 +64,9 @@ def compute_wc_trend(quarterly_results):
         else: insight=f"Margins stable around {ra:.1f}%."
     return {"trend":trend,"insight":insight}
 
+# ─────────────────────────────────────────────────────────────────────────────
+# RELATIVE RETURN VS NIFTY
+# ─────────────────────────────────────────────────────────────────────────────
 def compute_relative_return(symbol, price_history):
     result={"periods":{},"insight":"","niftyHistory":[],"outperforming":False}
     if not price_history or len(price_history)<20: return result
@@ -90,6 +100,9 @@ def compute_relative_return(symbol, price_history):
     except Exception as e: result["insight"]=f"Relative return unavailable: {e}"
     return result
 
+# ─────────────────────────────────────────────────────────────────────────────
+# RED FLAGS ANALYSIS
+# ─────────────────────────────────────────────────────────────────────────────
 def check_red_flags(fin, ratios, screener):
     flags=[]
     def s(k,i=0): return _s(fin.get(k),i)
@@ -127,6 +140,9 @@ def check_red_flags(fin, ratios, screener):
     flags.sort(key=lambda f:order.get(f["severity"],3))
     return flags
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PROMOTER TRANSACTIONS
+# ─────────────────────────────────────────────────────────────────────────────
 def fetch_promoter_tx(symbol):
     txs=[]
     clean=symbol.replace(".NS","").replace(".BO","")
@@ -150,6 +166,229 @@ def fetch_promoter_tx(symbol):
         except: pass
     return txs[:12]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ALTMAN Z-SCORE (for listed manufacturing companies)
+# ─────────────────────────────────────────────────────────────────────────────
+def compute_altman_z(fin, ratios):
+    try:
+        def s(k): return _s(fin.get(k), 0) or 0
+        
+        ca = s("current_assets") or 0
+        cl = s("current_liabilities") or 0
+        ta = s("total_assets") or 0
+        re = s("retained_earnings") or 0
+        eb = s("op_income") or s("ebit") or 0
+        rev = s("revenue") or 0
+        vl = s("total_liabilities") or 0
+        
+        if ta <= 0 or vl <= 0:
+            return {"score": None, "zone": "Unknown", "detail": "Insufficient data"}
+        
+        # Altman Z for emerging markets
+        wc = (ca - cl) / ta if ta else 0
+        re_ratio = re / ta if ta else 0
+        eb_ratio = eb / ta if ta else 0
+        rev_ratio = rev / ta if ta else 0
+        
+        z = 6.56 * wc + 3.26 * re_ratio + 6.72 * eb_ratio + 1.05 * rev_ratio
+        
+        if z > 3:
+            zone = "Safe"
+            detail = f"Z-Score {z:.2f} — Low bankruptcy risk"
+        elif z > 1.1:
+            zone = "Grey"
+            detail = f"Z-Score {z:.2f} — Uncertain, monitor closely"
+        else:
+            zone = "Distress"
+            detail = f"Z-Score {z:.2f} — High bankruptcy risk"
+        
+        return {"score": round(z, 2), "zone": zone, "detail": detail}
+    except Exception as e:
+        return {"score": None, "zone": "Error", "detail": str(e)}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# FII / DII HOLDINGS TREND
+# ─────────────────────────────────────────────────────────────────────────────
+def compute_fii_dii_trend(screener):
+    try:
+        sh = screener.get("shareholding", {})
+        fii = sh.get("fii", [])
+        dii = sh.get("dii", [])
+        
+        # Try to get historical data from promoter_history
+        ph = screener.get("promoter_history", [])
+        
+        result = {"fii": [], "dii": [], "insight": ""}
+        
+        # Extract FII from shareholding if available
+        if fii and isinstance(fii, (int, float)):
+            result["fii"] = [{"quarter": "Latest", "pct": round(fii, 2)}]
+        
+        if dii and isinstance(dii, (int, float)):
+            result["dii"] = [{"quarter": "Latest", "pct": round(dii, 2)}]
+        
+        # Generate insight
+        fii_latest = result["fii"][0]["pct"] if result["fii"] else 0
+        dii_latest = result["dii"][0]["pct"] if result["dii"] else 0
+        
+        if fii_latest > 20:
+            result["insight"] = f"High FII interest at {fii_latest}%. Foreign investors bullish."
+        elif fii_latest < 5:
+            result["insight"] = f"Low FII participation at {fii_latest}%. Domestic-driven stock."
+        else:
+            result["insight"] = f"FII: {fii_latest}%, DII: {dii_latest}%. Balanced institutional ownership."
+        
+        return result
+    except Exception as e:
+        return {"fii": [], "dii": [], "insight": f"Data unavailable: {e}"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BULK / BLOCK DEALS (from NSE)
+# ─────────────────────────────────────────────────────────────────────────────
+def fetch_bulk_deals(symbol):
+    deals = []
+    clean = symbol.replace(".NS", "").replace(".BO", "")
+    
+    try:
+        # Try NSE bulk deals page
+        url = f"https://www.nseindia.com/api/corporate-bulk-deals?symbol={clean}"
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        
+        if resp.status_code == 200:
+            data = resp.json()
+            for d in data.get("data", [])[:10]:
+                deals.append({
+                    "date": d.get("dealDate", ""),
+                    "type": d.get("dealType", ""),
+                    "quantity": d.get("quantity", 0),
+                    "price": d.get("price", 0),
+                    "value": d.get("dealValue", 0),
+                    "buyer": d.get("buyerName", ""),
+                    "seller": d.get("sellerName", "")
+                })
+    except Exception as e:
+        pass
+    
+    # If no NSE data, try screener
+    if not deals:
+        try:
+            clean_url = symbol.replace(".NS", "").replace(".BO", "")
+            url = f"https://www.screener.in/company/{clean_url}/"
+            resp = requests.get(url, headers=HEADERS, timeout=12)
+            if resp.status_code == 200:
+                soup = BeautifulSoup(resp.text, "html.parser")
+                # Look for bulk deals section
+                for section in soup.find_all(["section", "div"]):
+                    if "bulk" in section.get_text().lower():
+                        tables = section.find_all("table")
+                        for tbl in tables[:2]:
+                            rows = tbl.find_all("tr")[1:4]
+                            for row in rows:
+                                cells = row.find_all("td")
+                                if len(cells) >= 3:
+                                    deals.append({
+                                        "date": cells[0].get_text(strip=True),
+                                        "type": cells[1].get_text(strip=True),
+                                        "quantity": cells[2].get_text(strip=True),
+                                        "price": cells[3].get_text(strip=True) if len(cells) > 3 else "",
+                                    })
+        except Exception as e:
+            pass
+    
+    return deals[:10]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CASH FLOW ANALYSIS
+# ─────────────────────────────────────────────────────────────────────────────
+def compute_cash_flow(fin):
+    try:
+        def s(k): return _s(fin.get(k), 0) or 0
+        
+        operating = s("fcf")  # Free Cash Flow
+        investing = s("cash_from_investing") or s("capex")
+        financing = s("cash_from_financing") or s("dividends_paid")
+        
+        if not any([operating, investing, financing]):
+            return {"insight": "Cash flow data not available"}
+        
+        insight = ""
+        
+        # Operating cash generation
+        if operating and operating > 0:
+            if operating > s("net_profit") or operating > 0:
+                insight = "Strong operating cash generation — FCF > PAT. Quality earnings."
+            else:
+                insight = "Operating cash positive but below PAT — monitor working capital."
+        elif operating and operating < 0:
+            insight = "Negative operating cash flow — critical red flag. Check why."
+        
+        # Investing
+        if investing and investing < 0:
+            capex_mag = abs(investing)
+            if operating and operating > 0:
+                if operating > capex_mag:
+                    insight += " Capex being funded by operations — sustainable."
+                else:
+                    insight += " Capex exceeds operating cash — relying on financing."
+        
+        # Financing
+        if financing and financing < 0:
+            insight += " Dividend / debt repayment outflow."
+        
+        return {
+            "operating": operating,
+            "investing": investing,
+            "financing": financing,
+            "insight": insight or "Cash flow analysis unavailable"
+        }
+    except Exception as e:
+        return {"insight": f"Error: {e}"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# KEY RATIOS SUMMARY
+# ─────────────────────────────────────────────────────────────────────────────
+def compute_ratios_summary(ratios, fin):
+    def r(k): return ratios.get(k)
+    
+    result = {
+        "valuation": {
+            "pe": r("pe"),
+            "pb": r("pb"),
+            "ps": r("ps"),
+            "ev_ebitda": r("ev_ebitda"),
+            "peg": r("peg"),
+            "dividend_yield": r("dividend_yield")
+        },
+        "profitability": {
+            "roe": r("roe"),
+            "roa": r("roa"),
+            "roic": r("roic") or (r("roe") * 0.8 if r("roe") else None),
+            "gross_margin": fin.get("gross_profit"),
+            "net_margin": r("profit_margin"),
+            "op_margin": r("op_margin")
+        },
+        "liquidity": {
+            "current_ratio": r("current_ratio"),
+            "quick_ratio": r("quick_ratio"),
+            "debt_to_equity": r("debt_to_equity"),
+            "interest_coverage": r("interest_coverage")
+        },
+        "growth": {
+            "revenue_growth": r("revenue_growth"),
+            "eps_growth": r("eps_growth"),
+            "profit_growth": r("profit_growth")
+        },
+        "size": {
+            "market_cap_cr": ratios.get("market_cap"),
+            "enterprise_value": r("enterprise_value")
+        }
+    }
+    
+    return result
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MAIN RUNNER
+# ─────────────────────────────────────────────────────────────────────────────
 def run_advanced(symbol, fin, ratios, screener, price_history, ticker_obj=None, company_name=""):
     return {
         "dupont": compute_dupont(fin, ratios),
@@ -157,4 +396,10 @@ def run_advanced(symbol, fin, ratios, screener, price_history, ticker_obj=None, 
         "relativeReturn": compute_relative_return(symbol, price_history),
         "redFlags": check_red_flags(fin, ratios, screener),
         "promoterTx": fetch_promoter_tx(symbol),
+        # New additions
+        "altmanZ": compute_altman_z(fin, ratios),
+        "fiiDii": compute_fii_dii_trend(screener),
+        "bulkDeals": fetch_bulk_deals(symbol),
+        "cashFlow": compute_cash_flow(fin),
+        "ratiosSummary": compute_ratios_summary(ratios, fin)
     }

@@ -22,9 +22,7 @@ export default function Compare() {
         if (json.ok && active) {
           const arr = []
           for (const key in json.results) {
-            if (json.results[key].ok) {
-              arr.push(json.results[key].data)
-            }
+            if (json.results[key].ok) arr.push(json.results[key].data)
           }
           setData(arr)
         }
@@ -38,120 +36,100 @@ export default function Compare() {
   if (!backendLive) return (
     <div className="empty-state">
       <div className="empty-icon">⇋</div>
-      <div className="empty-text">Backend offline</div>
-      <div className="empty-hint">Start the server to compare stocks</div>
+      <div className="empty-title">Backend offline</div>
     </div>
   )
 
   if (watchlist.length === 0) return (
     <div className="empty-state">
       <div className="empty-icon">⇋</div>
-      <div className="empty-text">Add stocks to your watchlist</div>
-      <div className="empty-hint">Compare stocks from your watchlist</div>
+      <div className="empty-title">Add stocks to watchlist</div>
     </div>
   )
 
   if (loading && data.length === 0) return (
-    <div className="loading-state">
-      <div className="spinner" style={{ width: 32, height: 32 }} />
-      <div className="loading-text">Loading comparison data...</div>
+    <div className="empty-state">
+      <div className="spinner" style={{ width: 24, height: 24, border: '2px solid var(--accent-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      <div className="empty-title">Loading...</div>
     </div>
   )
 
-  const thStyle = {
-    padding: '14px 16px',
-    borderBottom: '2px solid var(--border)',
-    fontWeight: 700,
-    fontSize: 12,
-    textAlign: 'left'
-  }
-
-  const tdStyle = {
-    padding: '12px 16px',
-    borderBottom: '1px solid var(--border)',
-    fontSize: 13
-  }
-
-  const sectionStyle = {
-    ...tdStyle,
-    background: 'var(--surface-elevated)',
-    fontWeight: 700,
-    fontSize: 11,
-    color: 'var(--text-dim)',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase'
-  }
-
   return (
-    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', background: 'var(--surface-elevated)' }}>
-        <div className="card-title" style={{ marginBottom: 4 }}>Multi-Stock Comparison</div>
-        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Comparing {data.length} stocks from your watchlist</div>
+    <div style={{ padding: '0 0 20px 0' }}>
+      <div style={{ 
+        background: 'var(--bg-secondary)', 
+        border: '1px solid var(--border-default)', 
+        borderRadius: 14, 
+        padding: 16, 
+        marginBottom: 16 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Compare</span>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{data.length} stocks</span>
+          </div>
+        </div>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 600 }}>
+      <div className="panel" style={{ padding: 0, overflow: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
           <thead>
-            <tr>
-              <th style={{ ...thStyle, width: 140, background: 'var(--surface-elevated)' }}>Metric</th>
+            <tr style={{ background: 'var(--bg-tertiary)' }}>
+              <th style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--text-dim)', textAlign: 'left', width: 120 }}>Metric</th>
               {data.map(d => (
-                <th key={d.symbol} style={{ ...thStyle }}>
-                  <div style={{ fontSize: 18, color: 'var(--primary)', fontWeight: 700 }}>{d.symbol}</div>
-                  <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-dim)', marginTop: 4 }}>₹{d.price?.current || '--'}</div>
+                <th key={d.symbol} style={{ padding: '12px 14px', textAlign: 'right' }}>
+                  <div style={{ fontSize: 16, color: 'var(--accent-primary)', fontWeight: 800 }}>{d.symbol}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 2 }}>₹{d.price?.current || '--'}</div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            <tr><td colSpan={data.length + 1} style={sectionStyle}>Valuation</td></tr>
+            <tr><td colSpan={data.length + 1} style={{ padding: '10px 14px', background: 'var(--bg-secondary)', fontWeight: 700, color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Valuation</td></tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>P/E Ratio</td>
-              {data.map(d => <td key={d.symbol} style={tdStyle}>{d.ratios?.pe?.toFixed(2) || '--'}</td>)}
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>P/E</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{d.ratios?.pe?.toFixed(2) || '--'}</td>)}
             </tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>P/B Ratio</td>
-              {data.map(d => <td key={d.symbol} style={tdStyle}>{d.ratios?.pb?.toFixed(2) || '--'}</td>)}
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>P/B</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{d.ratios?.pb?.toFixed(2) || '--'}</td>)}
             </tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>EV/EBITDA</td>
-              {data.map(d => <td key={d.symbol} style={tdStyle}>{d.ratios?.ev_ebitda?.toFixed(2) || '--'}</td>)}
-            </tr>
-
-            <tr><td colSpan={data.length + 1} style={sectionStyle}>Profitability</td></tr>
-            <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>ROE (%)</td>
-              {data.map(d => <td key={d.symbol} style={{ ...tdStyle, color: (d.ratios?.roe || 0) > 15 ? 'var(--success)' : (d.ratios?.roe || 0) > 10 ? 'var(--warning)' : 'var(--error)' }}>{d.ratios?.roe?.toFixed(2) || '--'}</td>)}
-            </tr>
-            <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>ROA (%)</td>
-              {data.map(d => <td key={d.symbol} style={tdStyle}>{d.ratios?.roa?.toFixed(2) || '--'}</td>)}
-            </tr>
-            <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>Net Margin (%)</td>
-              {data.map(d => <td key={d.symbol} style={tdStyle}>{d.ratios?.netMargin?.toFixed(2) || '--'}</td>)}
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>EV/EBITDA</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{d.ratios?.ev_ebitda?.toFixed(2) || '--'}</td>)}
             </tr>
 
-            <tr><td colSpan={data.length + 1} style={sectionStyle}>Growth & Health</td></tr>
+            <tr><td colSpan={data.length + 1} style={{ padding: '10px 14px', background: 'var(--bg-secondary)', fontWeight: 700, color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Profitability</td></tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>Revenue Growth (%)</td>
-              {data.map(d => <td key={d.symbol} style={{ ...tdStyle, color: (d.ratios?.revGrowth || 0) > 15 ? 'var(--success)' : 'inherit' }}>{d.ratios?.revGrowth?.toFixed(2) || '--'}</td>)}
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>ROE %</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: (d.ratios?.roe || 0) > 15 ? 'var(--gain)' : (d.ratios?.roe || 0) > 8 ? 'var(--warning)' : 'var(--loss)' }}>{d.ratios?.roe?.toFixed(2) || '--'}</td>)}
             </tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>Debt to Equity</td>
-              {data.map(d => <td key={d.symbol} style={{ ...tdStyle, color: (d.ratios?.de || 0) < 0.5 ? 'var(--success)' : (d.ratios?.de || 0) < 1 ? 'var(--warning)' : 'var(--error)' }}>{d.ratios?.de?.toFixed(2) || '--'}</td>)}
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Net Margin %</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{d.ratios?.profit_margin?.toFixed(2) || '--'}</td>)}
+            </tr>
+
+            <tr><td colSpan={data.length + 1} style={{ padding: '10px 14px', background: 'var(--bg-secondary)', fontWeight: 700, color: 'var(--text-dim)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Growth & Health</td></tr>
+            <tr>
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Rev Growth %</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: (d.ratios?.revenue_growth || 0) > 15 ? 'var(--gain)' : 'inherit' }}>{d.ratios?.revenue_growth?.toFixed(2) || '--'}</td>)}
             </tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>DeepDive Score</td>
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Debt/Equity</td>
+              {data.map(d => <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: (d.ratios?.debt_to_equity || 0) < 0.5 ? 'var(--gain)' : (d.ratios?.debt_to_equity || 0) < 1 ? 'var(--warning)' : 'var(--loss)' }}>{d.ratios?.debt_to_equity?.toFixed(2) || '--'}</td>)}
+            </tr>
+            <tr>
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Score</td>
               {data.map(d => (
-                <td key={d.symbol} style={{ ...tdStyle, color: d.fundamental?.overallPct > 70 ? 'var(--success)' : d.fundamental?.overallPct < 40 ? 'var(--error)' : 'var(--warning)', fontWeight: 700 }}>
+                <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: d.fundamental?.overallPct > 70 ? 'var(--gain)' : d.fundamental?.overallPct < 40 ? 'var(--loss)' : 'var(--warning)' }}>
                   {d.fundamental?.overallPct ? `${d.fundamental.overallPct.toFixed(0)}%` : '--'}
                 </td>
               ))}
             </tr>
             <tr>
-              <td style={{ ...tdStyle, color: 'var(--text-muted)' }}>Tech Trend</td>
+              <td style={{ padding: '10px 14px', color: 'var(--text-secondary)' }}>Tech Trend</td>
               {data.map(d => (
-                <td key={d.symbol} style={{ ...tdStyle, color: d.technical?.trend?.includes('Bullish') ? 'var(--success)' : d.technical?.trend?.includes('Bearish') ? 'var(--error)' : 'var(--warning)', fontWeight: 600 }}>
+                <td key={d.symbol} style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 600, color: d.technical?.trend?.includes('Bullish') ? 'var(--gain)' : d.technical?.trend?.includes('Bearish') ? 'var(--loss)' : 'var(--warning)' }}>
                   {d.technical?.trend || '--'}
                 </td>
               ))}

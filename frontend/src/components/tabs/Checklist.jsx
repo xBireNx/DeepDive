@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useStore } from '../../store'
 
 const CHECKLIST = [
@@ -25,7 +26,18 @@ const CHECKLIST = [
 
 const CATS = [...new Set(CHECKLIST.map(q => q.cat))]
 
+const SecHeader = ({ label, collapsed, onToggle }) => (
+  <div onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginBottom: 12, marginTop: 16 }}>
+    <span className="section-title">{label}</span>
+    <div className="section-line" style={{ flex: 1 }} />
+    {onToggle && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{collapsed ? '▼' : '▲'}</span>}
+  </div>
+)
+
 export default function Checklist({ data }) {
+  const [collapsed, setCollapsed] = useState({})
+  const toggleSection = (key) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
+
   const { checkState, toggleCheck, resetChecklist } = useStore()
   const sym = data?.symbol || 'GENERAL'
   const state = checkState[sym] || {}
@@ -34,43 +46,65 @@ export default function Checklist({ data }) {
   const readyColor = pct >= 80 ? 'var(--gain)' : pct >= 60 ? 'var(--warning)' : 'var(--loss)'
 
   return (
-    <div>
-      <div className="section-header">
-        <span className="section-title">Investment Checklist{data ? ` — ${sym}` : ''}</span>
-        <div className="section-line" style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>{checked}/{CHECKLIST.length} PASSED</span>
+    <div style={{ padding: '0 0 20px 0' }}>
+      <div style={{ 
+        background: 'var(--bg-secondary)', 
+        border: '1px solid var(--border-default)', 
+        borderRadius: 14, 
+        padding: 16, 
+        marginBottom: 16 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Checklist</span>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{data?.symbol || 'General'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <span style={{ fontSize: 11, padding: '6px 12px', background: `${readyColor}20`, color: readyColor, borderRadius: 8, fontWeight: 700 }}>
+              {checked}/{CHECKLIST.length} PASSED
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="progress-bar" style={{ height: 6, marginBottom: 24 }}>
-        <div className="progress-fill" style={{ width: `${pct}%`, background: readyColor }} />
+      <div style={{ height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, marginBottom: 16, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: readyColor, borderRadius: 3, transition: 'width 0.3s' }} />
       </div>
 
-      <div className="layout-2col">
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
         <div>
           {CATS.map(cat => (
-            <div key={cat} style={{ marginBottom: 24 }}>
+            <div key={cat} style={{ marginBottom: 16 }}>
               <div style={{
-                fontSize: 11,
-                color: 'var(--text-dim)',
+                fontSize: 10,
+                color: 'var(--accent-primary)',
                 fontWeight: 700,
-                letterSpacing: 0.5,
+                letterSpacing: 1,
                 textTransform: 'uppercase',
-                marginBottom: 12,
-                paddingBottom: 8,
-                borderBottom: '1px solid var(--border-subtle)'
+                marginBottom: 10,
+                paddingBottom: 6,
+                borderBottom: '1px solid var(--accent-primary)30'
               }}>
                 {cat}
               </div>
               {CHECKLIST.filter(q => q.cat === cat).map(q => (
-                <div key={q.id} className="checklist-row">
-                  <div
-                    className={`checkbox ${state[q.id] ? 'checked' : ''}`}
-                    onClick={() => toggleCheck(sym, q.id)}
-                  >
-                    {state[q.id] && <span>✓</span>}
+                <div key={q.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8, cursor: 'pointer' }} onClick={() => toggleCheck(sym, q.id)}>
+                  <div style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 4,
+                    border: state[q.id] ? 'none' : '2px solid var(--border-default)',
+                    background: state[q.id] ? 'var(--gain)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: 2
+                  }}>
+                    {state[q.id] && <span style={{ color: '#000', fontSize: 12, fontWeight: 700 }}>✓</span>}
                   </div>
                   <div style={{
-                    fontSize: 13,
+                    fontSize: 12,
                     color: state[q.id] ? 'var(--text-dim)' : 'var(--text-primary)',
                     lineHeight: 1.5,
                     flex: 1,
@@ -84,37 +118,39 @@ export default function Checklist({ data }) {
           ))}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className="panel" style={{ textAlign: 'center', padding: '24px 16px' }}>
-            <div className="panel-title">Readiness Score</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 52, fontWeight: 800, color: readyColor, lineHeight: 1 }}>{pct}%</div>
-            <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 8, fontWeight: 600 }}>{checked} of {CHECKLIST.length} checks completed</div>
-            <div style={{ marginTop: 20, fontSize: 13, fontWeight: 700, color: readyColor, padding: '10px 14px', borderRadius: 8, background: `${readyColor}15` }}>
-              {pct >= 80 ? 'INVESTMENT READY' : pct >= 60 ? 'PROCEED WITH CAUTION' : 'INSUFFICIENT DATA'}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <SecHeader label="Score" collapsed={collapsed.score} onToggle={() => toggleSection('score')} />
+          {!collapsed.score && (
+            <div className="panel" style={{ textAlign: 'center', padding: 20 }}>
+              <div style={{ fontSize: 10, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 8 }}>Readiness</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 48, fontWeight: 800, color: readyColor, lineHeight: 1 }}>{pct}%</div>
+              <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 6 }}>{checked} of {CHECKLIST.length} checks</div>
+              <div style={{ marginTop: 16, fontSize: 12, fontWeight: 700, color: readyColor, padding: '10px 14px', borderRadius: 8, background: `${readyColor}15` }}>
+                {pct >= 80 ? 'INVESTMENT READY' : pct >= 60 ? 'PROCEED WITH CAUTION' : 'INSUFFICIENT DATA'}
+              </div>
+              <button onClick={() => resetChecklist(sym)} style={{ marginTop: 16, width: '100%', padding: '8px 12px', borderRadius: 8, background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-secondary)', fontSize: 11, cursor: 'pointer' }}>Clear All</button>
             </div>
-            <button className="btn-secondary" style={{ marginTop: 20, width: '100%' }} onClick={() => resetChecklist(sym)}>Clear All Checks</button>
-          </div>
+          )}
 
-          <div className="panel" style={{ padding: '16px' }}>
-            <div className="panel-title">Investment Principles</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-              <div style={{ marginBottom: 10 }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Rule 1:</strong> Never lose money.
-              </div>
-              <div style={{ marginBottom: 16, paddingTop: 14, borderTop: '1px solid var(--border-subtle)' }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Rule 2:</strong> Never forget Rule 1.
-              </div>
-              <div style={{ fontStyle: 'italic', marginBottom: 12, padding: '10px 12px', background: 'var(--bg-tertiary)', borderRadius: 6, borderLeft: '3px solid var(--accent-primary)', fontSize: 12 }}>
-                "Price is what you pay. Value is what you get."
-              </div>
-              <div style={{ marginBottom: 6 }}>
-                <strong style={{ color: 'var(--text-primary)' }}>Strategy:</strong> Buy right, sit tight.
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                Conviction is built through deep research, not market noise.
+          <SecHeader label="Principles" collapsed={collapsed.principles} onToggle={() => toggleSection('principles')} />
+          {!collapsed.principles && (
+            <div className="panel" style={{ padding: 14 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
+                <div style={{ marginBottom: 8 }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Rule 1:</strong> Never lose money.
+                </div>
+                <div style={{ marginBottom: 12, paddingTop: 8, borderTop: '1px solid var(--border-subtle)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Rule 2:</strong> Never forget Rule 1.
+                </div>
+                <div style={{ fontStyle: 'italic', marginBottom: 10, padding: '8px 10px', background: 'var(--bg-tertiary)', borderRadius: 6, borderLeft: '3px solid var(--accent-primary)', fontSize: 11 }}>
+                  "Price is what you pay. Value is what you get."
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                  Strategy: Buy right, sit tight. Conviction is built through deep research.
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

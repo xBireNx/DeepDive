@@ -1,27 +1,62 @@
 import { useState } from 'react'
 
+const SecHeader = ({ label, collapsed, onToggle }) => (
+  <div onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginBottom: 12, marginTop: 16 }}>
+    <span className="section-title">{label}</span>
+    <div className="section-line" style={{ flex: 1 }} />
+    {onToggle && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{collapsed ? '▼' : '▲'}</span>}
+  </div>
+)
+
 export default function Calculators() {
   const [calcType, setCalcType] = useState('sip')
 
   return (
-    <div>
-      <div className="sec">
-        <span className="sec-l">Financial Calculators</span>
-        <div className="sec-line" style={{ flex: 1 }} />
+    <div style={{ padding: '0 0 20px 0' }}>
+      <div style={{ 
+        background: 'var(--bg-secondary)', 
+        border: '1px solid var(--border-default)', 
+        borderRadius: 14, 
+        padding: 16, 
+        marginBottom: 16 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Calculators</span>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
         <button
-          className={calcType === 'sip' ? 'btn-primary' : 'btn-outline'}
           onClick={() => setCalcType('sip')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+            background: calcType === 'sip' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+            color: calcType === 'sip' ? '#000' : 'var(--text-secondary)'
+          }}
         >
-          SIP Calculator
+          SIP
         </button>
         <button
-          className={calcType === 'tax' ? 'btn-primary' : 'btn-outline'}
           onClick={() => setCalcType('tax')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+            background: calcType === 'tax' ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
+            color: calcType === 'tax' ? '#000' : 'var(--text-secondary)'
+          }}
         >
-          Tax Calculator
+          Tax
         </button>
       </div>
 
@@ -43,63 +78,39 @@ function SIPCalculator() {
   const returns = wealth - invested
 
   return (
-    <div className="layout-2col">
-      <div className="card">
-        <div className="card-title">SIP Compounding Calculator</div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="panel" style={{ padding: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 16 }}>Inputs</div>
 
-        <div style={{ display: 'grid', gap: 20 }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Monthly Investment (₹)</label>
-            <input type="number" className="input" value={monthly} onChange={e => setMonthly(Number(e.target.value))} />
-            <input
-              type="range"
-              min="500"
-              max="100000"
-              step="500"
-              value={monthly}
-              onChange={e => setMonthly(Number(e.target.value))}
-              style={{ width: '100%', marginTop: 12 }}
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Time Period (Years)</label>
-            <input type="number" className="input" value={years} onChange={e => setYears(Number(e.target.value))} />
-            <input
-              type="range"
-              min="1"
-              max="40"
-              value={years}
-              onChange={e => setYears(Number(e.target.value))}
-              style={{ width: '100%', marginTop: 12 }}
-            />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Expected Return (%)</label>
-            <input type="number" className="input" value={rate} onChange={e => setRate(Number(e.target.value))} />
-            <input
-              type="range"
-              min="1"
-              max="30"
-              value={rate}
-              onChange={e => setRate(Number(e.target.value))}
-              style={{ width: '100%', marginTop: 12 }}
-            />
-          </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, color: 'var(--text-secondary)' }}>Monthly Investment (₹)</label>
+          <input type="number" className="input" value={monthly} onChange={e => setMonthly(Number(e.target.value))} style={{ marginBottom: 8 }} />
+          <input type="range" min="500" max="100000" step="500" value={monthly} onChange={e => setMonthly(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent-primary)' }} />
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, color: 'var(--text-secondary)' }}>Time Period (Years)</label>
+          <input type="number" className="input" value={years} onChange={e => setYears(Number(e.target.value))} style={{ marginBottom: 8 }} />
+          <input type="range" min="1" max="40" value={years} onChange={e => setYears(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent-primary)' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, color: 'var(--text-secondary)' }}>Expected Return (%)</label>
+          <input type="number" className="input" value={rate} onChange={e => setRate(Number(e.target.value))} style={{ marginBottom: 8 }} />
+          <input type="range" min="1" max="30" value={rate} onChange={e => setRate(Number(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent-primary)' }} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div className="card" style={{ textAlign: 'center', padding: '24px 20px' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>Total Investment</div>
-          <div style={{ fontSize: 28, fontWeight: 700 }}>₹{invested.toLocaleString('en-IN')}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="panel" style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4 }}>Total Investment</div>
+          <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>₹{invested.toLocaleString('en-IN')}</div>
         </div>
-        <div className="card" style={{ textAlign: 'center', padding: '24px 20px' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>Est. Returns</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--success)' }}>₹{returns.toLocaleString('en-IN')}</div>
+        <div className="panel" style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4 }}>Est. Returns</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--gain)', fontFamily: 'var(--font-mono)' }}>₹{returns.toLocaleString('en-IN')}</div>
         </div>
-        <div className="card" style={{ textAlign: 'center', padding: '28px 24px', background: 'var(--primary-glow)', border: '2px solid var(--primary)' }}>
-          <div style={{ fontSize: 13, color: 'var(--primary)', marginBottom: 8, fontWeight: 600 }}>Total Wealth</div>
-          <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--primary)' }}>₹{wealth.toLocaleString('en-IN')}</div>
+        <div className="panel" style={{ padding: 20, textAlign: 'center', border: '2px solid var(--accent-primary)', background: 'var(--accent-dim)' }}>
+          <div style={{ fontSize: 11, color: 'var(--accent-primary)', marginBottom: 6, fontWeight: 600 }}>Total Wealth</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--accent-primary)', fontFamily: 'var(--font-mono)' }}>₹{wealth.toLocaleString('en-IN')}</div>
         </div>
       </div>
     </div>
@@ -119,72 +130,51 @@ function TaxCalculator() {
   const net = profit - tax
 
   return (
-    <div className="layout-2col">
-      <div className="card">
-        <div className="card-title">Indian Equity Tax Calculator</div>
-        <div style={{ fontSize: 11, color: 'var(--text-dim)', marginBottom: 20 }}>Latest FY rules (STCG: 20%, LTCG: 12.5% over ₹1.25L)</div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="panel" style={{ padding: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 16 }}>Inputs</div>
+        <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 16 }}>STCG: 20% | LTCG: 12.5% over ₹1.25L</div>
 
-        <div style={{ display: 'grid', gap: 16 }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Buy Price (₹)</label>
-              <input type="number" className="input" value={buyPrice} onChange={e => setBuyPrice(Number(e.target.value))} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Sell Price (₹)</label>
-              <input type="number" className="input" value={sellPrice} onChange={e => setSellPrice(Number(e.target.value))} />
-            </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 11, color: 'var(--text-secondary)' }}>Buy Price (₹)</label>
+            <input type="number" className="input" value={buyPrice} onChange={e => setBuyPrice(Number(e.target.value))} />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Quantity</label>
-            <input type="number" className="input" value={qty} onChange={e => setQty(Number(e.target.value))} />
+            <label style={{ display: 'block', marginBottom: 4, fontSize: 11, color: 'var(--text-secondary)' }}>Sell Price (₹)</label>
+            <input type="number" className="input" value={sellPrice} onChange={e => setSellPrice(Number(e.target.value))} />
           </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>Holding Period</label>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                className={holdingPeriod === 'stcg' ? 'btn-primary' : 'btn-outline'}
-                onClick={() => setHoldingPeriod('stcg')}
-                style={{ flex: 1 }}
-              >
-                &lt; 1 Year (STCG)
-              </button>
-              <button
-                className={holdingPeriod === 'ltcg' ? 'btn-primary' : 'btn-outline'}
-                onClick={() => setHoldingPeriod('ltcg')}
-                style={{ flex: 1 }}
-              >
-                &gt; 1 Year (LTCG)
-              </button>
-            </div>
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', marginBottom: 4, fontSize: 11, color: 'var(--text-secondary)' }}>Quantity</label>
+          <input type="number" className="input" value={qty} onChange={e => setQty(Number(e.target.value))} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: 6, fontSize: 11, color: 'var(--text-secondary)' }}>Holding Period</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setHoldingPeriod('stcg')} style={{ flex: 1, padding: '8px 10px', borderRadius: 6, fontSize: 10, border: 'none', cursor: 'pointer', background: holdingPeriod === 'stcg' ? 'var(--accent-primary)' : 'var(--bg-tertiary)', color: holdingPeriod === 'stcg' ? '#000' : 'var(--text-secondary)' }}>STCG</button>
+            <button onClick={() => setHoldingPeriod('ltcg')} style={{ flex: 1, padding: '8px 10px', borderRadius: 6, fontSize: 10, border: 'none', cursor: 'pointer', background: holdingPeriod === 'ltcg' ? 'var(--accent-primary)' : 'var(--bg-tertiary)', color: holdingPeriod === 'ltcg' ? '#000' : 'var(--text-secondary)' }}>LTCG</button>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div className="card" style={{ textAlign: 'center', padding: '24px 20px' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>Gross Profit / Loss</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="panel" style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4 }}>Profit / Loss</div>
+          <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-mono)', color: profit >= 0 ? 'var(--gain)' : 'var(--loss)' }}>
             ₹{profit.toLocaleString('en-IN')}
           </div>
         </div>
-        <div className="card" style={{ textAlign: 'center', padding: '24px 20px' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 8 }}>Est. Tax Liability</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: tax > 0 ? 'var(--error)' : 'var(--text-dim)' }}>
+        <div className="panel" style={{ padding: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4 }}>Tax Liability</div>
+          <div style={{ fontSize: 22, fontWeight: 800, fontFamily: 'var(--font-mono)', color: tax > 0 ? 'var(--loss)' : 'var(--text-dim)' }}>
             ₹{Math.round(tax).toLocaleString('en-IN')}
           </div>
-          {holdingPeriod === 'ltcg' && (
-            <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 8 }}>* Exemption of ₹1.25L applies</div>
-          )}
+          {holdingPeriod === 'ltcg' && <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>* ₹1.25L exemption</div>}
         </div>
-        <div className="card" style={{
-          textAlign: 'center',
-          padding: '28px 24px',
-          background: profit >= 0 ? 'var(--success-muted)' : 'var(--error-muted)',
-          border: `2px solid ${profit >= 0 ? 'var(--success)' : 'var(--error)'}`
-        }}>
-          <div style={{ fontSize: 13, color: profit >= 0 ? 'var(--success)' : 'var(--error)', marginBottom: 8, fontWeight: 600 }}>Net Profit after Tax</div>
-          <div style={{ fontSize: 36, fontWeight: 800, color: profit >= 0 ? 'var(--success)' : 'var(--error)' }}>
+        <div className="panel" style={{ padding: 20, textAlign: 'center', border: '2px solid', borderColor: profit >= 0 ? 'var(--gain)' : 'var(--loss)', background: profit >= 0 ? 'var(--gain-dim)' : 'var(--loss-dim)' }}>
+          <div style={{ fontSize: 11, color: profit >= 0 ? 'var(--gain)' : 'var(--loss)', marginBottom: 6, fontWeight: 600 }}>Net Profit</div>
+          <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-mono)', color: profit >= 0 ? 'var(--gain)' : 'var(--loss)' }}>
             ₹{Math.round(net).toLocaleString('en-IN')}
           </div>
         </div>

@@ -1,38 +1,87 @@
 import React from 'react'
 
 export default function PEBandChart({ data, currentPE }) {
-  if (!data || data.length === 0 || !currentPE) return <div className="empty-state" style={{height: 150}}>No data for P/E Band</div>
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ 
+        height: 120, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'var(--bg-tertiary)',
+        borderRadius: 8,
+        color: 'var(--text-dim)',
+        fontSize: 11
+      }}>
+        No price history available
+      </div>
+    )
+  }
 
-  // We approximate the P/E bands by assuming current P/E is the 0-line,
-  // and creating +/- 20% bands around the price history to visualize median bands.
-  // Real implementation would need historical EPS data per quarter.
+  const hasPE = currentPE != null && currentPE > 0 && !isNaN(currentPE)
   
-  const minPrice = Math.min(...data.map(d => d.low)) * 0.8
-  const maxPrice = Math.max(...data.map(d => d.high)) * 1.2
+  const prices = data.map(d => d.close)
+  const minPrice = Math.min(...prices) * 0.9
+  const maxPrice = Math.max(...prices) * 1.1
+  const range = maxPrice - minPrice || 1
   
+  const heightPercent = data.map(d => {
+    const pct = 100 - ((d.close - minPrice) / range) * 100
+    return Math.max(2, Math.min(98, pct))
+  })
+
   return (
-    <div style={{ width: '100%', height: 250, display: 'flex', alignItems: 'flex-end', gap: 2, paddingTop: 20, position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 0, left: 0, fontSize: 10, color: 'var(--muted)' }}>
-        Current P/E: {currentPE.toFixed(1)}x (Mocked ±20% Bands based on price action)
+    <div style={{ width: '100%', height: 120, position: 'relative', background: 'var(--bg-secondary)', borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 6, left: 8, fontSize: 9, color: 'var(--text-dim)', zIndex: 10, display: 'flex', gap: 8 }}>
+        <span style={{ color: hasPE ? 'var(--accent-primary)' : 'var(--text-dim)' }}>
+          P/E: {hasPE ? currentPE.toFixed(1) + 'x' : 'N/A'}
+        </span>
+        <span style={{ color: 'var(--text-dim)' }}>| {data.length}D</span>
       </div>
       
-      {/* Background bands */}
-      <div style={{ position: 'absolute', top: '10%', bottom: '10%', width: '100%', background: 'rgba(56, 189, 248, 0.05)', borderTop: '1px dashed rgba(56, 189, 248, 0.3)', borderBottom: '1px dashed rgba(56, 189, 248, 0.3)' }} />
-      <div style={{ position: 'absolute', top: '30%', bottom: '30%', width: '100%', background: 'rgba(34, 197, 94, 0.05)', borderTop: '1px dashed rgba(34, 197, 94, 0.3)', borderBottom: '1px dashed rgba(34, 197, 94, 0.3)' }} />
-      
-      {/* Price line */}
-      <svg width="100%" height="100%" preserveAspectRatio="none" style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
+      <svg width="100%" height="100%" style={{ display: 'block' }}>
+        <defs>
+          <linearGradient id="priceGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--accent-primary)" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="var(--accent-primary)" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+        
+        {/* Background bands if PE exists */}
+        {hasPE && (
+          <g>
+            <rect x="0" y="0" width="100%" height="100%" fill="transparent" />
+            <line x1="0%" y1="30%" x2="100%" y2="30%" stroke="var(--loss)" strokeWidth="1" strokeDasharray="4,4" opacity="0.3" />
+            <line x1="0%" y1="70%" x2="100%" y2="70%" stroke="var(--gain)" strokeWidth="1" strokeDasharray="4,4" opacity="0.3" />
+            <text x="98%" y="31%" fill="var(--loss)" fontSize="7" textAnchor="end">+20%</text>
+            <text x="98%" y="71%" fill="var(--gain)" fontSize="7" textAnchor="end">-20%</text>
+          </g>
+        )}
+        
+        {/* Area under the line */}
+        <path
+          d={`M0,100 ${heightPercent.map((y, i) => `L${(i / (data.length - 1)) * 100}%,${y}%`).join(' ')} L100%,100 Z`}
+          fill="url(#priceGradient)"
+        />
+        
+        {/* Price line */}
         <polyline
           fill="none"
-          stroke="var(--brand)"
+          stroke="var(--accent-primary)"
           strokeWidth="2"
-          points={data.map((d, i) => {
-            const x = (i / (data.length - 1)) * 100
-            const y = 100 - ((d.close - minPrice) / (maxPrice - minPrice)) * 100
-            return `${x}%,${y}%`
-          }).join(' ')}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          points={heightPercent.map((y, i) => `${(i / (data.length - 1)) * 100}%,${y}%`).join(' ')}
         />
       </svg>
+      
+      {/* Y-axis labels */}
+      <div style={{ position: 'absolute', right: 4, top: 20, fontSize: 7, color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '1px 3px', borderRadius: 2 }}>
+        ₹{Math.round(maxPrice)}
+      </div>
+      <div style={{ position: 'absolute', right: 4, bottom: 4, fontSize: 7, color: 'var(--text-dim)', background: 'rgba(0,0,0,0.3)', padding: '1px 3px', borderRadius: 2 }}>
+        ₹{Math.round(minPrice)}
+      </div>
     </div>
   )
 }

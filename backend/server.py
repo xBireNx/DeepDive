@@ -131,7 +131,7 @@ def run_full_analysis(query):
                 continue
 
     # Advanced analysis — fully isolated, never crashes the main pipeline
-    adv_fallback = {"dupont":{"trend":[],"current":{},"insight":""},"wcTrend":{"trend":[],"insight":""},"relativeReturn":{"periods":{},"insight":"","niftyHistory":[],"outperforming":False},"redFlags":[{"flag":"No flags detected","severity":"CLEAR","detail":"Advanced analysis ran with available data."}],"promoterTx":[]}
+    adv_fallback = {"dupont":{"trend":[],"current":{},"insight":""},"wcTrend":{"trend":[],"insight":""},"relativeReturn":{"periods":{},"insight":"","niftyHistory":[],"outperforming":False},"redFlags":[{"flag":"No flags detected","severity":"CLEAR","detail":"Advanced analysis ran with available data."}],"promoterTx":[],"altmanZ":{},"fiiDii":{},"bulkDeals":[],"cashFlow":{},"ratiosSummary":{}}
     try:
         advanced = run_advanced(symbol, fin or {}, ratios or {}, screener or {}, price_history, ticker_obj=ticker, company_name=company.get("name",""))
     except Exception as e:
@@ -177,6 +177,12 @@ def run_full_analysis(query):
         "redFlags": serialise(advanced["redFlags"]),
         "promoterTx": serialise(advanced["promoterTx"]),
         "earningsHistory": serialise(earnings_history),
+        # New advanced data
+        "altmanZ": advanced.get("altmanZ", {}),
+        "fiiDii": advanced.get("fiiDii", {}),
+        "bulkDeals": advanced.get("bulkDeals", []),
+        "cashFlow": advanced.get("cashFlow", {}),
+        "ratiosSummary": advanced.get("ratiosSummary", {}),
     }
 
 # ── ROUTES ────────────────────────────────────────────────────────────────────

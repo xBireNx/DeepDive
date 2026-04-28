@@ -33,24 +33,24 @@ export default function Notes({ data }) {
   const placeholder = `Investment Thesis — ${activeTicker || 'Select a stock'}
 
 Why I'm watching:
-•
+• 
 
 Key catalysts:
-•
+• 
 
 Risks:
-•
+• 
 
 Buy condition:
-•
+• 
 
 Exit condition:
 
 Grade: ${sd?.fundamental?.grade || '?'} · PE: ${sd?.ratios?.pe || '?'}x · ROE: ${sd?.ratios?.roe || '?'}%`
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 14, height: 'calc(100dvh - 180px)' }}>
-      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 12, height: 'calc(100dvh - 180px)' }}>
+      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)' }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Stocks</span>
         </div>
@@ -63,27 +63,26 @@ Grade: ${sd?.fundamental?.grade || '?'} · PE: ${sd?.ratios?.pe || '?'}x · ROE:
                 padding: '10px 14px',
                 borderBottom: '1px solid var(--border-subtle)',
                 cursor: 'pointer',
-                background: activeTicker === t ? 'var(--accent-primary-dim)' : 'transparent',
+                background: activeTicker === t ? 'var(--accent-dim)' : 'transparent',
                 borderLeft: activeTicker === t ? '3px solid var(--accent-primary)' : '3px solid transparent',
-                transition: 'all 0.15s'
               }}
             >
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-primary)' }}>{t}</div>
               <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {notes[t] ? notes[t].substring(0, 30) + '…' : 'No notes'}
+                {notes[t] ? notes[t].substring(0, 25) + '…' : 'No notes'}
               </div>
               {notes[t] && <div style={{ fontSize: 9, color: 'var(--gain)', marginTop: 3 }}>Saved ✓</div>}
             </div>
           ))}
           {allTickers.length === 0 && (
-            <div style={{ padding: 16, fontSize: 11, color: 'var(--text-dim)', textAlign: 'center' }}>No stocks yet</div>
+            <div style={{ padding: 16, fontSize: 11, color: 'var(--text-dim)', textAlign: 'center' }}>No stocks</div>
           )}
         </div>
       </div>
 
-      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: 12, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', background: 'var(--bg-tertiary)' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)', background: 'var(--accent-primary-dim)', padding: '3px 10px', borderRadius: 'var(--radius-sm)' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-primary)', background: 'var(--accent-dim)', padding: '3px 10px', borderRadius: 6 }}>
             {activeTicker || '—'}
           </span>
           <div style={{ display: 'flex', gap: 3 }}>
@@ -98,9 +97,8 @@ Grade: ${sd?.fundamental?.grade || '?'} · PE: ${sd?.ratios?.pe || '?'}x · ROE:
                   fontFamily: 'var(--font-mono)',
                   fontSize: 10,
                   padding: '3px 6px',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: 4,
                   cursor: 'pointer',
-                  transition: 'all 0.15s'
                 }}
               >
                 {fmt.trim() || '•'}
@@ -108,9 +106,9 @@ Grade: ${sd?.fundamental?.grade || '?'} · PE: ${sd?.ratios?.pe || '?'}x · ROE:
             ))}
           </div>
           <span style={{ fontSize: 10, color: dirty ? 'var(--warning)' : 'var(--gain)', marginLeft: 'auto' }}>
-            {dirty ? 'Unsaved changes *' : 'All saved'}
+            {dirty ? 'Unsaved *' : 'Saved'}
           </span>
-          <button className="btn-primary" onClick={save} style={{ fontSize: 11, padding: '6px 12px' }}>Save</button>
+          <button className="btn-primary" onClick={save} style={{ fontSize: 10, padding: '5px 10px', borderRadius: 6 }}>Save</button>
         </div>
         <textarea
           id="notesTA"

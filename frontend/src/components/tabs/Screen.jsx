@@ -4,7 +4,18 @@ import { fN, gradeColor } from '../../utils'
 import { showToast } from '../Toast'
 import SectorRotation from '../widgets/SectorRotation'
 
+const SecHeader = ({ label, collapsed, onToggle }) => (
+  <div onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginBottom: 12, marginTop: 16 }}>
+    <span className="section-title">{label}</span>
+    <div className="section-line" style={{ flex: 1 }} />
+    {onToggle && <span style={{ fontSize: 10, color: 'var(--text-dim)', marginLeft: 8 }}>{collapsed ? '▼' : '▲'}</span>}
+  </div>
+)
+
 export default function Screen() {
+  const [collapsed, setCollapsed] = useState({})
+  const toggleSection = (key) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
+
   const { stockCache, setActiveStock } = useStore()
   const [filters, setFilters] = useState({ maxPE: '', minROE: '', maxDE: '', minRevGrowth: '', minGrade: '', trend: 'Any' })
   const [results, setResults] = useState(null)
@@ -45,97 +56,105 @@ export default function Screen() {
   const f = (k, v) => setFilters(p => ({ ...p, [k]: v }))
 
   return (
-    <div>
-      <div className="sec">
-        <span className="sec-l">Stock Screener — Filter Your Universe</span>
-        <div className="sec-line" style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>{cached.length} stocks analyzed</span>
+    <div style={{ padding: '0 0 20px 0' }}>
+      <div style={{ 
+        background: 'var(--bg-secondary)', 
+        border: '1px solid var(--border-default)', 
+        borderRadius: 14, 
+        padding: 16, 
+        marginBottom: 16 
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>Screener</span>
+            <span style={{ fontSize: 12, color: 'var(--text-dim)', marginLeft: 10 }}>{cached.length} stocks</span>
+          </div>
+        </div>
       </div>
 
-      <SectorRotation />
+      <SecHeader label="Sector Rotation" collapsed={collapsed.sector} onToggle={() => toggleSection('sector')} />
+      {!collapsed.sector && (
+        <div style={{ marginBottom: 12 }}>
+          <SectorRotation />
+        </div>
+      )}
 
       {cached.length === 0 ? (
-        <div className="empty-state" style={{ height: 200 }}>
-          <div className="empty-icon">⊡</div>
-          <div className="empty-text">No stocks analyzed yet</div>
-          <div className="empty-hint">Analyze stocks first using the search bar</div>
+        <div className="empty-state" style={{ minHeight: 100 }}>
+          <div className="empty-title">No stocks analyzed</div>
         </div>
       ) : (
         <>
-          <div className="card" style={{ marginBottom: 20 }}>
-            <div className="card-title">Filter Criteria</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 14 }}>
-              {[
-                ['Max P/E', 'maxPE', 'e.g. 50'],
-                ['Min ROE (%)', 'minROE', 'e.g. 15'],
-                ['Max D/E', 'maxDE', 'e.g. 1.0'],
-                ['Min Rev Growth (%)', 'minRevGrowth', 'e.g. 20']
-              ].map(([l, k, p]) => (
-                <div key={k}>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>{l}</div>
-                  <input className="input" type="number" placeholder={p} value={filters[k]} onChange={e => f(k, e.target.value)} />
+          <SecHeader label="Filters" collapsed={collapsed.filters} onToggle={() => toggleSection('filters')} />
+          {!collapsed.filters && (
+            <div className="panel" style={{ padding: 14, marginBottom: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
+                {[
+                  ['Max P/E', 'maxPE', 'e.g. 50'],
+                  ['Min ROE %', 'minROE', 'e.g. 15'],
+                  ['Max D/E', 'maxDE', 'e.g. 1.0'],
+                  ['Min Rev Growth %', 'minRevGrowth', 'e.g. 20'],
+                ].map(([l, k, p]) => (
+                  <div key={k}>
+                    <div style={{ fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>{l}</div>
+                    <input className="input" type="number" placeholder={p} value={filters[k]} onChange={e => f(k, e.target.value)} style={{ fontSize: 11 }} />
+                  </div>
+                ))}
+                <div>
+                  <div style={{ fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Min Grade</div>
+                  <select className="select" value={filters.minGrade} onChange={e => f('minGrade', e.target.value)} style={{ fontSize: 11 }}>
+                    <option value="">Any</option>
+                    <option value="A">A+</option>
+                    <option value="B">B+</option>
+                    <option value="C">C+</option>
+                  </select>
                 </div>
-              ))}
-              <div>
-                <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Min Grade</div>
-                <select className="select" value={filters.minGrade} onChange={e => f('minGrade', e.target.value)}>
-                  <option value="">Any</option>
-                  <option value="A">A or above</option>
-                  <option value="B">B or above</option>
-                  <option value="C">C or above</option>
-                </select>
+                <div>
+                  <div style={{ fontSize: 9, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: 4 }}>Trend</div>
+                  <select className="select" value={filters.trend} onChange={e => f('trend', e.target.value)} style={{ fontSize: 11 }}>
+                    <option value="Any">Any</option>
+                    <option value="Uptrend">Uptrend</option>
+                    <option value="Downtrend">Downtrend</option>
+                    <option value="Sideways">Sideways</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <div style={{ fontSize: 10, color: 'var(--text-dim)', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Trend</div>
-                <select className="select" value={filters.trend} onChange={e => f('trend', e.target.value)}>
-                  <option value="Any">Any</option>
-                  <option value="Uptrend">Uptrend</option>
-                  <option value="Downtrend">Downtrend</option>
-                  <option value="Sideways">Sideways</option>
-                </select>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => { setFilters({ maxPE: '', minROE: '', maxDE: '', minRevGrowth: '', minGrade: '', trend: 'Any' }); setResults(null) }} style={{ padding: '6px 12px', borderRadius: 6, background: 'var(--bg-tertiary)', border: 'none', color: 'var(--text-secondary)', fontSize: 11, cursor: 'pointer' }}>Clear</button>
+                <button className="btn-primary" onClick={runScreen} style={{ padding: '6px 14px', fontSize: 11, borderRadius: 6 }}>▶ Run</button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button className="btn-outline" onClick={() => { setFilters({ maxPE: '', minROE: '', maxDE: '', minRevGrowth: '', minGrade: '', trend: 'Any' }); setResults(null) }}>Clear</button>
-              <button className="btn-primary" onClick={runScreen}>▶ Run Screen</button>
-            </div>
-          </div>
+          )}
 
           {results !== null && (
             results.length === 0 ? (
-              <div className="empty-state" style={{ height: 160 }}>
-                <div className="empty-icon">⊡</div>
-                <div className="empty-text">No stocks match</div>
-                <div className="empty-hint">Relax your criteria or analyze more stocks</div>
+              <div className="empty-state" style={{ minHeight: 100 }}>
+                <div className="empty-title">No matches</div>
               </div>
             ) : (
-              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <table className="p-table">
+              <div className="panel" style={{ padding: 0, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
-                    <tr>
-                      {['Stock', 'Price', 'P/E', 'ROE', 'D/E', 'Rev Growth', 'Grade', 'Trend', 'Score'].map(h => <th key={h}>{h}</th>)}
+                    <tr style={{ background: 'var(--bg-tertiary)' }}>
+                      {['Stock', 'Price', 'P/E', 'ROE', 'D/E', 'Rev Gr', 'Grade', 'Trend', 'Score'].map(h => (
+                        <th key={h} style={{ padding: '8px 10px', textAlign: h === 'Stock' ? 'left' : 'right', color: 'var(--text-dim)', fontWeight: 600, fontSize: 9, textTransform: 'uppercase' }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {results.map(r => (
-                      <tr
-                        key={r.symbol}
-                        onClick={() => { setActiveStock(r.symbol); showToast(`Viewing ${r.symbol}`) }}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        <td>
-                          <span style={{ fontWeight: 700, color: 'var(--text)' }}>{r.symbol}</span>
-                          <br />
-                          <span style={{ fontSize: 10, color: 'var(--text-dim)' }}>{(r.name || '').substring(0, 18)}</span>
+                      <tr key={r.symbol} onClick={() => { setActiveStock(r.symbol); showToast(`Viewing ${r.symbol}`) }} style={{ cursor: 'pointer', borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{r.symbol}</span>
                         </td>
-                        <td>₹{fN(r.price, '', '', 0)}</td>
-                        <td className={r.pe > 60 ? 'cy' : r.pe < 25 ? 'cg' : ''}>{fN(r.pe, '', 'x', 1)}</td>
-                        <td className={r.roe > 15 ? 'cg' : r.roe > 10 ? 'cy' : 'cr'}>{fN(r.roe, '', '%', 1)}</td>
-                        <td className={r.de < 0.3 ? 'cg' : r.de < 1 ? 'cy' : 'cr'}>{fN(r.de, '', 'x', 2)}</td>
-                        <td className={r.revGrowth > 20 ? 'cg' : r.revGrowth > 10 ? 'cy' : 'cr'}>{fN(r.revGrowth, '', '%', 1)}</td>
-                        <td style={{ fontWeight: 700, color: gradeColor(r.grade) }}>{r.grade || '?'}</td>
-                        <td style={{ fontSize: 11 }}>{r.trend || '—'}</td>
-                        <td style={{ fontWeight: 700, color: (r.scorePct || 0) >= 70 ? 'var(--success)' : (r.scorePct || 0) >= 50 ? 'var(--warning)' : 'var(--error)' }}>{r.scorePct || 0}%</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>₹{fN(r.price, '', '', 0)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: r.pe > 60 ? 'var(--warning)' : r.pe < 25 ? 'var(--gain)' : 'inherit' }}>{fN(r.pe, '', 'x', 1)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: r.roe > 15 ? 'var(--gain)' : r.roe > 8 ? 'var(--warning)' : 'var(--loss)' }}>{fN(r.roe, '', '%', 1)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: r.de < 0.3 ? 'var(--gain)' : r.de < 1 ? 'var(--warning)' : 'var(--loss)' }}>{fN(r.de, '', 'x', 2)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', color: r.revGrowth > 20 ? 'var(--gain)' : r.revGrowth > 10 ? 'var(--warning)' : 'var(--loss)' }}>{fN(r.revGrowth, '', '%', 1)}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: gradeColor(r.grade) }}>{r.grade || '?'}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontSize: 10 }}>{r.trend || '—'}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: (r.scorePct || 0) >= 70 ? 'var(--gain)' : (r.scorePct || 0) >= 50 ? 'var(--warning)' : 'var(--loss)' }}>{r.scorePct || 0}%</td>
                       </tr>
                     ))}
                   </tbody>
