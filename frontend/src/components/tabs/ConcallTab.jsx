@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
+import { useStore, API } from '../../store'
 
 const SecHeader = ({ label, collapsed, onToggle }) => (
   <div onClick={onToggle} style={{ cursor: 'pointer', userSelect: 'none', marginBottom: 12, marginTop: 16 }}>
@@ -25,7 +25,7 @@ export default function ConcallTab({ data }) {
     const fetchConcall = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/concall/${data.symbol}`)
+        const res = await fetch(`${API}/concall/${data.symbol}`)
         const json = await res.json()
         if (json.ok && active) setConcall(json.data)
       } catch (e) {

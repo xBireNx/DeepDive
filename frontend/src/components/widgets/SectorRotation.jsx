@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { api } from '../../store'
 
 export default function SectorRotation() {
   const [data, setData] = useState(null)
@@ -10,7 +11,7 @@ export default function SectorRotation() {
     const fetchSectors = async () => {
       setLoading(true)
       try {
-        const res = await fetch('/api/sector-rotation')
+        const res = await fetch(`${api}/sector-rotation`)
         const json = await res.json()
         if (json.ok && active) setData(json.results)
       } catch (e) {

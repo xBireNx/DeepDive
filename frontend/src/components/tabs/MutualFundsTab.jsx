@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
+import { useStore, API } from '../../store'
 
 const TREND_COLOR = {
   'Strongly Bullish': 'var(--gain)',
@@ -30,7 +30,7 @@ export default function MutualFundsTab({ data }) {
     if (!symbol) return
     setLoading(true)
     setErr(null)
-    fetch(`/api/mf/${symbol}`)
+    fetch(`${API}/mf/${symbol}`)
       .then(r => r.json())
       .then(res => {
         if (res.ok) setMf(res.data)

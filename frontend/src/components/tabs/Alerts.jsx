@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useStore } from '../../store'
+import { useStore, API } from '../../store'
 import { showToast } from '../Toast'
 
 const SecHeader = ({ label, collapsed, onToggle }) => (
@@ -30,7 +30,7 @@ export default function Alerts() {
 
     if (backendLive && (form.email || form.phone)) {
       try {
-        const res = await fetch('/api/alerts/subscribe', {
+        const res = await fetch(`${API}/alerts/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ symbol: form.ticker, email: form.email, phone: form.phone, buy: b, target: t, sl: s })

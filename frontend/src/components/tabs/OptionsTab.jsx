@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
+import { useStore, API } from '../../store'
 
 export default function OptionsTab({ data }) {
   const { backendLive } = useStore()
@@ -14,7 +14,7 @@ export default function OptionsTab({ data }) {
     const fetchOptions = async () => {
       setLoading(true)
       try {
-        const res = await fetch(`/api/options/${data.symbol}`)
+        const res = await fetch(`${API}/options/${data.symbol}`)
         const json = await res.json()
         if (json.ok && active) setOptionsData(json.data)
       } catch (e) {

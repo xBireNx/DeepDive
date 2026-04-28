@@ -1,0 +1,5 @@
+build:
+  post:
+    command: pip install -r requirements.txt
+    runner: python
+start: gunicorn -w 4 server:app

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store'
+import { useStore, API } from '../../store'
 
 export default function Compare() {
   const { watchlist, backendLive } = useStore()
@@ -13,7 +13,7 @@ export default function Compare() {
     const fetchBatch = async () => {
       setLoading(true)
       try {
-        const res = await fetch('/api/batch', {
+        const res = await fetch(`${API}/batch`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ tickers: watchlist.slice(0, 5) })

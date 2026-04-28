@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 // ── API HELPERS ────────────────────────────────────────────────────────────
-const API = '/api'
+const API = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api'
+export { API }
 
 export const api = {
   async analyse(symbol, force = false) {

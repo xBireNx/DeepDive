@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { API } from '../../store'
 
 const MOAT_LABELS = {
   network_effects: 'Network Effects',
@@ -60,7 +61,7 @@ export default function StrategicTab({ data }) {
   useEffect(() => {
     if (!symbol) return
     setLoading(true); setError(null); setAnalysis(null)
-    fetch(`/api/strategic/${symbol}`)
+    fetch(`${API}/strategic/${symbol}`)
       .then(r => r.json())
       .then(res => { if (res.ok) setAnalysis(res.data); else setError(res.error || 'Failed') })
       .catch(e => setError(e.message))

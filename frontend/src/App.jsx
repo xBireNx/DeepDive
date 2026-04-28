@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useStore } from './store'
+import { useStore, API } from './store'
 import { Toast, showToast } from './components/Toast'
 import Topbar from './components/layout/Topbar'
 import Sidebar from './components/layout/Sidebar'
@@ -175,7 +175,7 @@ export default function App() {
     let active = true
     const pollAlerts = async () => {
       try {
-        const res = await fetch('/api/live-alerts')
+        const res = await fetch(`${API}/live-alerts`)
         const json = await res.json()
         if (json.ok && json.alert && active) {
           showToast(json.alert, 'warning', 6000)
